@@ -1,0 +1,30 @@
+
+                     Essential R code and data to accompany 
+  "A flexible two-dimensional mortality model for use in indirect estimation" 
+             by Wilmoth, Zureick, Canudas-Romo, Inoue, and Sawyer
+
+
+The files in this archive contain code written in R (see www.r-project.org)
+for estimating the log-quadratic mortality model from a large collection of
+historical data, and for applying that model in a wide variety of situations.
+
+The archive also includes the collection of 719 abridged life tables (from the 
+Human Mortality Database, www.mortality.org) used for estimating the model, 
+as well as estimates of model coefficients according to the preferred method 
+of fitting the model to data (the bi-weight method, as described in the paper 
+and supplemental materials).
+
+The R code is found in three separate files.  First, "functions.R" contains a
+variety of functions that perform the bulk of the actual calculations.  Second,
+"modeling.R" contains code used for estimating the log-quadratic model (using
+the bi-weight method) by calling functions in the first file.  Third, "figures.R"
+contains code for creating Figure 4 of the paper, illustrating various forms of 
+the age pattern of mortality that can be produced using the fitted model.
+
+For applying the model in various situations, the function lthat.any2.logquad() is 
+especially useful.  Supplying any two of five possible input parameters - 5q0, k,
+e0, 45q15, 35q15, and 1q0 - though excluding the pairing of 5q0 and 1q0 (because this
+combination contains no information about adult mortality) and the pairing of 45q15
+and 35q15 (because this combination contains no information about child mortality), 
+the function produces an age schedule of mortality rates (in both 5- and 1-year 
+age groups), as well as a full set of life table functions (5-year age groups only).

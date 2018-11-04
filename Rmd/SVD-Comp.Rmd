@@ -1,0 +1,3945 @@
+---
+title: "SVD Component Mortality Model"
+subtitle: "Reproducibility Materials: Data and Code"
+author: "Samuel J. Clark"
+date: "2018-11"
+output:
+  bookdown::pdf_document2
+---
+
+
+
+```{r echo=FALSE}
+# install required packages
+require("knitr",quietly=TRUE)
+require("bookdown",quietly=TRUE)
+require("formatR",quietly=TRUE)
+require("devtools",quietly=TRUE)
+require("reshape2",quietly=TRUE)
+require("ggplot2",quietly=TRUE)
+require("plyr",quietly=TRUE)
+require("stargazer",quietly=TRUE)
+require("xtable",quietly=TRUE)
+require("readr",quietly=TRUE)
+require("stringr",quietly=TRUE)
+require("httr",quietly=TRUE)
+
+# load a few packages necessary to set up the Markdown file
+library(knitr)
+library(bookdown)
+library(formatR)
+
+# set Markdown file options
+# knitr::opts_knit$set(root.dir = normalizePath(".."))
+opts_chunk$set(fig.align='center', fig.show='hold')
+opts_chunk$set(warning=FALSE, message=FALSE, error=FALSE) 
+opts_chunk$set(tidy=TRUE)
+opts_chunk$set(cache=TRUE)
+opts_chunk$set(eval=TRUE)
+opts_chunk$set(fig.width=6.5, fig.height=6.5)
+options(formatR.arrow=TRUE, width=55)
+```
+
+
+# Preliminaries
+
+This R Markdown document was created in RStudio using the Knit Directory = *Document Directory* setting. The code assumes it will execute in the document directory, and depending on how you run this, you may have to set that manually, just above.
+
+This R Markdown document was prepared using
+
+* R version 3.5.1 (2018-07-02) -- "Feather Spray" 
+* RStudio version 1.1.456
+* Additional R packages from CRAN
+
+    * knitr
+    * bookdown
+    * formatR
+    * devtools
+    * reshape2
+    * ggplot2
+    * plyr
+    * stargazer
+    * xtable
+    * readr
+    * stringr
+    * httr
+
+This document is distributed in R Markdown .Rmd and PDF .pdf documents.  First load the necessary packages.
+
+```{r packages-for-analysis, echo=FALSE, eval=TRUE}
+library(readr)
+library(stringr)
+library(reshape2)
+library(ggplot2)
+library(plyr)
+library(httr)
+library(stargazer)
+library(xtable)
+library(devtools)
+# optional, this installs a version of stargazer that formats things in 'booktabs' style
+install_github("markwestcott34/stargazer-booktabs")
+```
+
+
+# HMD Data
+
+## Download and parse HMD
+
+First clear everything out, including directories where results will be stored. 
+
+```{r clear, eval = TRUE, echo = TRUE, results = 'hide'}
+rm(list=ls()) # clear R environment
+system("rm -r ../data/HMD/*") # remove contents of HMD data directory
+system("rm -r ../RData/*") # remove contents of Rdata directory
+system("rm -r ../figures/*") # remove contents of figures directory
+system("rm -r ../tables/*") # remove contents of figures directory
+```
+
+The data come from the Human Mortality Database (HMD) and are available online at [www.mortality.org - **click here**](www.mortality.org/hmd/zip/all_hmd/hmd_statistics.zip). The file *getHMD.R* contains a set of functions that automate downloading and parsing all of the HMD life tables. This code is not commented, but you can get the general gist of what's going on by reading it. In a nutshell, the HMD .zip file is downloaded and unzipped (if the HMD web site isn't working, a pre-downloaded version of the file from 2018-11-02 is used), and then all life tables of a specified type are read into a big R list that is very fast and flexible. Functions are provided for extracting a specified column from all life tables in such a list and outputing the result as a matrix. The following chunk sources the functions for automating downloading and processing of the HMD life tables.
+
+```{r download-functions, eval = TRUE, echo = TRUE}
+# source("../R/getHMD.R") # load the 'read HMD' functions
+
+# uncommented code to download the HMD Statistics file and organize the life tables
+#   into an easy-to-manipulate list
+list.raw.lts <- function(hmd.dir,age,period) {
+  
+  lts <- list(
+    female = read.raw.lt(hmd.dir,"female",age,period),
+    male = read.raw.lt(hmd.dir,"male",age,period),
+    both = read.raw.lt(hmd.dir,"both",age,period)
+  )
+  
+  return(lts)
+  
+}
+
+
+read.raw.lt <- function(hmd.dir,sex,age,period) {
+  
+  # <hmd.dir> must contain a string that specifies the location 
+  # of the 'hmd_statistics' directory created when the 
+  # HMD .zip file is unzipped. 
+  
+  switch <- sex.per.age.switch(sex,age,period,hmd.dir)
+  data.dir <- paste(hmd.dir,switch$data.path,sep="")
+    
+  lt <- list()
+  
+  files <- Sys.glob(paste(eval(data.dir),"/*.txt",sep=""))
+  files.split <- strsplit(files,"\\.")
+  
+  for (i in 1:length(files.split)) {
+    country.name <- strsplit(basename(files[i]),"\\.")[[1]][1]
+    lt[[country.name]] = parse.lt(files[i],age)
+  }
+  
+  return(lt)
+  
+}
+
+
+sex.per.age.switch <- function(sex,age,period,root.dir) {
+  
+  subtract <- 0
+  for (i in 1:3) {
+    if(str_sub(root.dir,1,1)=="." | str_sub(root.dir,1,1)=="/") {
+      subtract <- subtract+1
+    }
+  }
+  root.length <- str_length(root.dir)-subtract
+  
+  if (sex == "female") {
+    
+    if (age == 1) {
+      if (period == 1) {
+        path <- "/lt_female/fltper_1x1"
+        value <- list(
+          sap.code = 1,
+          data.path = path
+        )
+      } else if (period == 5) {
+        path <- "/lt_female/fltper_1x5"
+        value <- list(
+          sap.code = 2,
+          data.path = path
+        )
+      } else if (period == 10) {
+        path <- "/lt_female/fltper_1x10"
+        value <- list(
+          sap.code = 3,
+          data.path = path
+        )
+      } else {
+        value <- list(
+          sap.code = 0,
+          data.path = ""
+        )
+      }
+    } else if (age == 5) {
+      if (period == 1) {
+        path <- "/lt_female/fltper_5x1"
+        value <- list(
+          sap.code = 4,
+          data.path = path
+        )
+      } else if (period == 5) {
+        path <- "/lt_female/fltper_5x5"
+        value <- list(
+          sap.code = 5,
+          data.path = path
+        )
+      } else if (period == 10) {
+        path <- "/lt_female/fltper_5x10"
+        value <- list(
+          sap.code = 6,
+          data.path = path
+        )
+      } else {
+        value <- list(
+          sap.code = 0,
+          data.path = ""
+        )
+      }
+    } else {
+      value <- list(
+        sap.code = 0,
+        data.path = ""
+      )
+    }
+    
+  } else if (sex == "male") {
+    
+    if (age == 1) {
+      if (period == 1) {
+        path <- "/lt_male/mltper_1x1"
+        value <- list(
+          sap.code = 7,
+          data.path = path
+        )
+      } else if (period == 5) {
+        path <- "/lt_male/mltper_1x5"
+        value <- list(
+          sap.code = 8,
+          data.path = path
+        )
+      } else if (period == 10) {
+        path <- "/lt_male/mltper_1x10"
+        value <- list(
+          sap.code = 9,
+          data.path = path
+        )
+      } else {
+        value <- list(
+          sap.code = 0,
+          data.path = ""
+        )
+      }
+    } else if (age == 5) {
+      if (period == 1) {
+        path <- "/lt_male/mltper_5x1"
+        value <- list(
+          sap.code = 10,
+          data.path = path
+        )
+      } else if (period == 5) {
+        path <- "/lt_male/mltper_5x5"
+        value <- list(
+          sap.code = 11,
+          data.path = path
+        )
+      } else if (period == 10) {
+        path <- "/lt_male/mltper_5x10"
+        value <- list(
+          sap.code = 12,
+          data.path = path
+        )
+      } else {
+        value <- list(
+          sap.code = 0,
+          data.path = ""
+        )
+      }
+    } else {
+      value <- list(
+        sap.code = 0,
+        data.path = ""
+      )
+    }
+    
+  } else if (sex == "both") {
+    
+    if (age == 1) {
+      if (period == 1) {
+        path <- "/lt_both/bltper_1x1"
+        value <- list(
+          sap.code = 7,
+          data.path = path
+        )
+      } else if (period == 5) {
+        path <- "/lt_both/bltper_1x5"
+        value <- list(
+          sap.code = 8,
+          data.path = path
+        )
+      } else if (period == 10) {
+        path <- "/lt_both/bltper_1x10"
+        value <- list(
+          sap.code = 9,
+          data.path = path
+        )
+      } else {
+        value <- list(
+          sap.code = 0,
+          data.path = ""
+        )
+      }
+    } else if (age == 5) {
+      if (period == 1) {
+        path <- "/lt_both/bltper_5x1"
+        value <- list(
+          sap.code = 10,
+          data.path = path
+        )
+      } else if (period == 5) {
+        path <- "/lt_both/bltper_5x5"
+        value <- list(
+          sap.code = 11,
+          data.path = path
+        )
+      } else if (period == 10) {
+        path <- "/lt_both/bltper_5x10"
+        value <- list(
+          sap.code = 12,
+          data.path = path
+        )
+      } else {
+        value <- list(
+          sap.code = 0,
+          data.path = ""
+        )
+      }
+    } else {
+      value <- list(
+        sap.code = 0,
+        data.path = ""
+      )
+    }
+    
+  } else {
+    value <- list(
+      sap.code = 0,
+      data.path = ""
+    )
+  }
+  
+  return(value)
+  
+}
+
+
+parse.lt <- function(file.name,age) {
+  
+  if (age == 1) {
+    w <- c(9, 11, 11, 9, 6, 8, 8, 8, 9, NA)
+  } else if (age == 5) {
+    w <- c(9, 11, 11, 9, 6, 8, 8, 8, 9, NA)
+  } else {
+    w <- NA
+  }
+  
+  return(
+    read_fwf(
+      file=file.name
+      , na = c("", "NA")
+      , skip = 3
+      , col_types="ccnnnnnnnn"
+      , fwf_widths(
+        widths = w
+        , col_names=c("period","age","mx","qx","ax","lx","dx","Lx","Tx","ex")
+      )
+    )
+  )
+  
+}
+
+
+list.lts <- function(hmd.dir,age,period,download.date) {
+  
+  list.raw.lts <- list.raw.lts(hmd.dir,age,period)
+  
+  if (age == 1) {
+    ages <- 111
+  } else if (age == 5) {
+    ages <- 24
+  } else {
+    ages <- NA
+  }
+  
+  lt.list <- list()
+  lt.list[["creation.date"]] <- date()
+  lt.list[["download.date"]] <- download.date
+  lt.list[["female"]] <- list()
+  lt.list[["male"]] <- list()
+  lt.list[["both"]] <- list()
+  lt.list[["age"]] <- age
+  lt.list[["age.groups"]] <- ages
+  lt.list[["period"]] <- period
+
+  for (sx in c("female","male","both")) {
+    for (i in 1:length(list.raw.lts[[sx]])) {
+      lt.list[[sx]][[eval(names(list.raw.lts[[sx]][i]))]] <- list()
+      for (j in 1:(dim(list.raw.lts[[sx]][[i]])[1]/ages)) {
+        pop <- eval(names(list.raw.lts[[sx]][i]))
+        per <- unlist(list.raw.lts[[sx]][[i]][(ages*j-(ages-1)),1])
+        per <- paste("P",str_replace_all(per, "[-]", "to"),sep="")
+        lt.list[[sx]][[pop]][[per]] = list.raw.lts[[sx]][[i]][((ages*j-(ages-1)):(ages*j)),]
+      }  
+    }
+  }
+  
+  return(lt.list)
+  
+}
+
+
+count.lts <- function (lt.list,sex) {
+  
+  lt.cumsum <- 0
+  for (i in 1:length(lt.list[[sex]])) {
+    lt.cumsum <- lt.cumsum + length(lt.list[[sex]][[i]])
+  }
+  
+  return(lt.cumsum)
+  
+}
+
+
+extract.lt.col <- function (lt.list,sex,col.name) {
+  
+  if (lt.list$age == 1) {
+    ages <- 111
+  } else if (lt.list$age == 5) {
+    ages <- 24
+  } else {
+    ages <- NA
+  }
+  
+  if (col.name == "period") {
+    col <- 1  
+  } else if (col.name == "age") {
+    col <- 2
+  } else if (col.name == "mx") {
+    col <- 3
+  } else if (col.name == "qx") {
+    col <- 4
+  } else if (col.name == "ax") {
+    col <- 5
+  } else if (col.name == "lx") {
+    col <- 6
+  } else if (col.name == "dx") {
+    col <- 7
+  } else if (col.name == "Lx") {
+    col <- 8
+  } else if (col.name == "Tx") {
+    col <- 9
+  } else if (col.name == "ex") {
+    col <- 10
+  } else {
+    col <- NA
+  }
+  
+  lts.count <- count.lts(lt.list,"female")
+  
+  if (col > 1) {
+    lts.colmat <- matrix(data=rep(0,ages*lts.count),nrow=ages,ncol=lts.count)
+  } else if (col == 1) {
+    lts.colmat <- matrix(data=rep("",ages*lts.count),nrow=ages,ncol=lts.count)
+  }
+  
+  col.names <- rep("",lts.count)
+  col.index <- 1
+  
+  for (i in 1:length(lt.list[[sex]])) {
+    for (j in 1:length(lt.list[[sex]][[i]])) {
+      if (col > 1) {
+        lts.colmat[,col.index] <- as.numeric(unlist(lt.list[[sex]][[i]][[j]][,col]))
+      } else if (col == 1) {
+        lts.colmat[,col.index] <- as.character(unlist(lt.list[[sex]][[i]][[j]][,col]))
+      }
+      pop <- names(lt.list[[sex]])[i]
+      per <- str_sub(names(lt.list[[sex]][[i]])[j],2,str_length(names(lt.list[[sex]][[i]])[j]))
+      col.names[col.index] <- paste(eval(sex),".",pop,".",per,sep="")
+      col.index <- col.index + 1
+    }
+  }
+  
+  colnames(lts.colmat) <- col.names
+  rownames(lts.colmat) <- unlist(lt.list$female[[1]][[1]][,2])
+  
+  return(lts.colmat)
+  
+}
+
+
+download.hmd <- function (output.file,unzip.dir,hmd.user,hmd.pass) {
+  
+  url <- "http://www.mortality.org/hmd/zip/all_hmd/hmd_statistics.zip"
+  print("Downloading HMD ...")
+  hmd.zip <- try(GET(url,authenticate(hmd.user,hmd.pass),write_disk(output.file,overwrite=TRUE)
+                     ,progress(),show.error.messages=FALSE))
+  if(class(hmd.zip)=="try-error") {
+    return(hmd.zip)
+    stop(attributes(hmd.zip)$condition)
+  } else if (http_status(hmd.zip)$category=="Client error") {
+    if(http_status(hmd.zip)$message=="Client error: (401) Unauthorized") {
+      return(hmd.zip)
+      stop("Check user name and password and try again.")    
+    } else {
+      return(hmd.zip)
+      stop(http_status(hmd.zip)$message)
+    }
+  } 
+  unzip(zipfile=output.file,exdir=unzip.dir)
+  return(hmd.zip)
+  
+}
+```
+
+The following chunk uses the download.hmd() function to downlaod the HMD life tables. To run you need to insert your own HMD user name and password. The data are unzipped into the *data/HMD/hmd_statistics* directory that needs to exist before downloading.
+
+```{r download-hmd, eval = TRUE, echo = TRUE, results = 'hide'}
+# try the download
+download.result <- download.hmd(
+  output.file="../data/HMD/hmd_statistics.zip",
+  unzip.dir="../data/HMD/hmd_statistics",
+  hmd.user="sam@samclark.net",
+  hmd.pass="1241662754"
+)
+# if download.hmd() returns an error, then use the local cached copy of the HMD
+if (class(download.result)=="try-error") {
+  print(paste("Something went wrong -- usually this means the HMD site is not available.",
+              " Using local cached version of HMD instead of a live download.",sep=""))
+  unzip(zipfile="../data/HMD Archive/hmd_statistics.zip",exdir="../data/HMD/hmd_statistics")
+} 
+```
+
+The *download.result* object contains a description of what happened when the download was requested. You can have a look with this code.
+
+```{r inspect-download-result, eval = FALSE, echo = TRUE}
+if (class(download.result)!="try-error") {
+  names(download.result)
+  download.result
+  download.result$date
+  download.result$times
+  download.result$headers
+} else {
+  print("Download did not happen, using local cached version of HMD.")
+}
+```
+
+HMD nomenclature describes *age*$\times$*period* life tables. For example $1\times1$ are single calendar year by single year of age, and $5\times5$ are five-year age groups by five-year periods, with the first age group broken into 0 and 1--4 years. The following code creates an R list for each of various commonly used life tables. The resulting lists are saved in the *RData* directory in compressed form. Unless it has been fixed between when I write this and when you execute it, the following code will produce errors for some of the Belarus files -- those files do not contain data.  Finally, if you use the HMD download functions on their own, make sure not to prepend '/' or './' to the path for the *hmd_statistics* directory. Several errors will appear; these are due to several HMD life tables not having any values, at this time all from Belarus.
+
+```{r parse-hmd-life tables, eval = TRUE, echo = TRUE}
+# set the download date if the download was successful
+if (class(download.result)!="try-error") {
+  download.date <- download.result$headers$date
+} else {
+  download.date <- "Local cached HMD"
+}
+
+# 1-year age x 1-year period life tables
+hmd.1x1.list <- list.lts("../data/HMD/hmd_statistics",1,1,download.date)
+# arguments are
+  # path to 'hmd_statistics' directory
+  # age designator: either 1 or 5 year age groups
+  # period designator: either 1, 5, or 10 year age groups
+save(file="../RData/hmd-1x1.RData",compress=TRUE,list=c("hmd.1x1.list"))
+# hmd.1x5.list <- list.lts("data/HMD/hmd_statistics",1,5,download.result$headers$date)
+# save(file="../RData/hmd-1x5.RData",compress=TRUE,list=c("hmd.1x5.list"))
+# hmd.1x10.list <- list.lts("data/HMD/hmd_statistics",1,10,download.result$headers$date)
+# save(file="../RData/hmd-1x10.RData",compress=TRUE,list=c("hmd.1x10.list"))
+
+# 5-year age x 1-year life tables
+hmd.5x1.list <- list.lts("../data/HMD/hmd_statistics",5,1,download.date)
+save(file="../RData/hmd-5x1.RData",compress=TRUE,list=c("hmd.5x1.list"))
+# hmd.5x5.list <- list.lts("data/HMD/hmd_statistics",5,5,download.result$headers$date)
+# save(file="../RData/hmd-5x5.RData",compress=TRUE,list=c("hmd.5x5.list"))
+# hmd.5x10.list <- list.lts("data/HMD/hmd_statistics",5,10,download.result$headers$date)
+# save(file="../RData/hmd-5x10.RData",compress=TRUE,list=c("hmd.5x10.list"))
+
+# rm(list=c("download.date","download.result"))
+```
+
+Have quick look at the lists saved in *Rdata*.
+
+```{r look-at-lists, eval = TRUE, echo = TRUE}
+list.files("../RData/")
+```
+
+Have a look at the top-level structure of the list.
+
+```{r, eval = TRUE, echo = TRUE}
+str(hmd.5x1.list, max.level = 1)
+```
+
+Have a quick look at the full structure of the lists, vastly truncated!
+
+```{r structure-of-lists, eval = TRUE, echo = TRUE}
+str(hmd.5x1.list, list.len = 4, vec.len = 2)
+```
+
+Have look at the full structure of one life table.
+
+```{r structure-of-life-table, eval = TRUE, echo = TRUE}
+str(hmd.5x1.list[[3]][[1]][[1]])
+# or equivalently
+str(hmd.5x1.list$female$AUS$P1921)
+```
+
+Extract single calendar year 1 and 5--year age group probabilities of dying and life expectancies and save them in _age_ $\times$ _lifetable_ matrices in the *RData* directory.
+
+```{r make-column-matrices, eval = TRUE, echo = TRUE}
+# 1x1 nqx
+q1.f <- extract.lt.col(hmd.1x1.list,"female","qx")
+save(file="../RData/q1.f.RData",compress=TRUE,list=c("q1.f"))
+q1.m <- extract.lt.col(hmd.1x1.list,"male","qx")
+save(file="../RData/q1.m.RData",compress=TRUE,list=c("q1.m"))
+# remove last row where nqx = 1
+q1.f <- q1.f[1:(nrow(q1.f)-1),]
+q1.m <- q1.m[1:(nrow(q1.m)-1),]
+
+# 1x1 1ax
+a1.f <- extract.lt.col(hmd.1x1.list,"female","ax")
+save(file="../RData/a1.f.RData",compress=TRUE,list=c("a1.f"))
+a1.m <- extract.lt.col(hmd.1x1.list,"male","ax")
+save(file="../RData/a1.m.RData",compress=TRUE,list=c("a1.m"))
+
+# 1x1 lx
+l1.f <- extract.lt.col(hmd.1x1.list,"female","lx")
+save(file="../RData/l1.f.RData",compress=TRUE,list=c("l1.f"))
+l1.m <- extract.lt.col(hmd.1x1.list,"male","lx")
+save(file="../RData/l1.m.RData",compress=TRUE,list=c("l1.m"))
+
+# 1x1 ex
+e1.f <- extract.lt.col(hmd.1x1.list,"female","ex")
+save(file="../RData/e1.f.RData",compress=TRUE,list=c("e1.f"))
+e1.m <- extract.lt.col(hmd.1x1.list,"male","ex")
+save(file="../RData/e1.m.RData",compress=TRUE,list=c("e1.m"))
+
+# 5x1 nqx
+q5.f <- extract.lt.col(hmd.5x1.list,"female","qx")
+save(file="../RData/q5.f.RData",compress=TRUE,list=c("q5.f"))
+q5.m <- extract.lt.col(hmd.5x1.list,"male","qx")
+save(file="../RData/q5.m.RData",compress=TRUE,list=c("q5.m"))
+# remove last row where nqx = 1
+q5.f <- q5.f[1:(nrow(q5.f)-1),]
+q5.m <- q5.m[1:(nrow(q5.m)-1),]
+
+# 5x1 5ax
+a5.f <- extract.lt.col(hmd.5x1.list,"female","ax")
+save(file="../RData/a5.f.RData",compress=TRUE,list=c("a5.f"))
+a5.m <- extract.lt.col(hmd.5x1.list,"male","ax")
+save(file="../RData/a5.m.RData",compress=TRUE,list=c("a5.m"))
+
+# 5x1 lx
+l5.f <- extract.lt.col(hmd.5x1.list,"female","lx")
+save(file="../RData/l5.f.RData",compress=TRUE,list=c("l5.f"))
+l5.m <- extract.lt.col(hmd.5x1.list,"male","lx")
+save(file="../RData/l5.m.RData",compress=TRUE,list=c("l5.m"))
+
+# 5x1 ex
+e5.f <- extract.lt.col(hmd.5x1.list,"female","ex")
+save(file="../RData/e5.f.RData",compress=TRUE,list=c("e5.f"))
+e5.m <- extract.lt.col(hmd.5x1.list,"male","ex")
+save(file="../RData/e5.f.RData",compress=TRUE,list=c("e5.m"))
+
+# rm(list=c("hmd.1x1.list","hmd.5x1.list"))
+```
+
+Have another quick look at the lists and now matrices saved in "Rdata".
+
+```{r look-at-matrices, eval = TRUE, echo = TRUE}
+list.files("../RData/")
+```
+
+## Clean HMD
+
+There are two persistent problems with the HMD $1\times1$ life tables:
+1. as mentioned just above, some of the Belarus life tables are empty, and 
+2. the ${_1}q_x$ values for some life tables are 'flat' at older ages, i.e. are constant.
+
+In both cases, these life tables need to be removed. We'll get rid of the Belarus tables first. The strategy is general: identify life tables with 'NA' values and remove those.  They turn out to be Balarus 1914--1918.
+
+```{r remove-balarus, eval = TRUE, echo = TRUE}
+## females
+which(is.na(q1.f[1,]))
+q1.f[1,which(is.na(q1.f[1,]))]
+
+which(is.na(q5.f[1,]))
+q5.f[1,which(is.na(q5.f[1,]))]
+
+which(is.na(e1.f[1,]))
+e1.f[1,which(is.na(e1.f[1,]))]
+
+which(is.na(e5.f[1,]))
+e5.f[1,which(is.na(e5.f[1,]))]
+
+## males
+which(is.na(q1.m[1,]))
+q1.m[1,which(is.na(q1.m[1,]))]
+
+which(is.na(q5.m[1,]))
+q5.m[1,which(is.na(q5.m[1,]))]
+
+which(is.na(e1.m[1,]))
+e1.m[1,which(is.na(e1.m[1,]))]
+
+which(is.na(e5.m[1,]))
+e5.m[1,which(is.na(e5.m[1,]))]
+
+# in all matrices, empty columns are THE SAME, numbered 236-340
+remove <- unique(c(which(is.na(q1.f[1,])),which(is.na(q1.m[1,]))))
+
+q1.f <- q1.f[,-remove]
+q5.f <- q5.f[,-remove]
+e1.f <- e1.f[,-remove]
+e5.f <- e5.f[,-remove]
+a1.f <- a1.f[,-remove]
+a5.f <- a5.f[,-remove]
+l1.f <- l1.f[,-remove]
+l5.f <- l5.f[,-remove]
+
+q1.m <- q1.m[,-remove]
+q5.m <- q5.m[,-remove]
+e1.m <- e1.m[,-remove]
+e5.m <- e5.m[,-remove]
+a1.m <- a1.m[,-remove]
+a5.m <- a5.m[,-remove]
+l1.m <- l1.m[,-remove]
+l5.m <- l5.m[,-remove]
+
+# verify all is well now
+q1.f[1,which(is.na(q1.f[1,]))] 
+q5.f[1,which(is.na(q5.f[1,]))]
+e1.f[1,which(is.na(q1.f[1,]))]
+e5.f[1,which(is.na(q5.f[1,]))]
+
+q1.m[1,which(is.na(q1.m[1,]))]
+q5.m[1,which(is.na(q5.m[1,]))]
+e1.m[1,which(is.na(q1.m[1,]))]
+e5.m[1,which(is.na(q5.m[1,]))]
+
+# make sure all matrices have same number of columns and same 
+# column manes
+dim(q1.f)
+dim(q1.m)
+dim(q5.f)
+dim(q5.m)
+dim(e1.f)
+dim(e1.m)
+dim(e5.f)
+dim(e5.m)
+dim(a1.f)
+dim(a1.m)
+dim(a5.f)
+dim(a5.m)
+dim(l1.f)
+dim(l1.m)
+dim(l5.f)
+dim(l5.m)
+
+# NB, last argument in str_sub intentionally empty, defaults to end of string
+identical(str_sub(colnames(q1.f),8,),str_sub(colnames(q1.m),6,))
+identical(str_sub(colnames(q5.f),8,),str_sub(colnames(q5.m),6,))
+identical(str_sub(colnames(e1.f),8,),str_sub(colnames(e1.m),6,))
+identical(str_sub(colnames(e5.f),8,),str_sub(colnames(e5.m),6,))
+identical(str_sub(colnames(q1.f),8,),str_sub(colnames(e1.f),8,))
+identical(str_sub(colnames(q1.f),8,),str_sub(colnames(e1.m),6,))
+identical(str_sub(colnames(q1.f),8,),str_sub(colnames(q5.f),8,))
+identical(str_sub(colnames(q1.f),8,),str_sub(colnames(q5.m),6,))
+identical(str_sub(colnames(q1.f),8,),str_sub(colnames(l1.f),8,))
+identical(str_sub(colnames(q1.f),8,),str_sub(colnames(l1.m),6,))
+identical(str_sub(colnames(q1.f),8,),str_sub(colnames(l5.f),8,))
+identical(str_sub(colnames(q1.f),8,),str_sub(colnames(l5.m),6,))
+
+rm(list=c("remove"))
+```
+
+Now identify and remove the 'flat' life tables. These turn out to be Iceland 1852 and New Zealand Maori 1949, 1956, and 1959.
+
+```{r remove-flat, eval = TRUE, echo = TRUE}
+## females -- FOUR PROBLEM LIFE TABLES
+# 1-year age
+# identify flat female LTs
+which(q1.f[106,]==q1.f[110,])
+# verify that they are constant at roughly ages 80+
+q1.f[75:110,which(q1.f[106,]==q1.f[110,])]
+# 5-year age
+# identify flat female LTs
+which(q5.f[23,]==q5.f[19,])
+# verify that they are constant at roughly ages 80+
+q5.f[15:23,which(q5.f[23,]==q5.f[19,])]
+
+## males -- ALL OK
+# 1-year age
+# identify flat female LTs
+which(q1.m[106,]==q1.m[110,])
+# verify that they are constant at roughly ages 80+
+q1.m[75:110,which(q1.m[106,]==q1.m[110,])]
+# 5-year age
+# identify flat female LTs
+which(q5.m[23,]==q5.m[19,])
+# verify that they are constant at roughly ages 80+
+q5.m[15:23,which(q5.m[23,]==q5.m[19,])]
+
+# remove all flat LTs that were flat for either females or males
+# from from BOTH female and male collections.  
+remove.1 <- unique(c(which(q1.f[106,]==q1.f[110,]),which(q1.m[106,]==q1.m[110,])))
+remove.5 <- unique(c(which(q5.f[23,]==q5.f[19,]),which(q5.m[23,]==q5.m[19,])))
+
+# are the remove lists the same?
+identical(remove.1,remove.5)
+
+# remove them from both sexes ane verify
+q1.f <- q1.f[,-remove.1]
+which(q1.f[106,]==q1.f[110,])
+q1.m <- q1.m[,-remove.1]
+which(q1.m[106,]==q1.m[110,])
+
+q5.f <- q5.f[,-remove.5]
+which(q5.f[23,]==q5.f[19,])
+q5.m <- q5.m[,-remove.5]
+which(q5.m[23,]==q5.m[19,])
+
+e1.f <- e1.f[,-remove.1]
+e1.m <- e1.m[,-remove.1]
+
+e5.f <- e5.f[,-remove.5]
+e5.m <- e5.m[,-remove.5]
+
+a1.f <- a1.f[,-remove.1]
+a1.m <- a1.m[,-remove.1]
+
+a5.f <- a5.f[,-remove.5]
+a5.m <- a5.m[,-remove.5]
+
+l1.f <- l1.f[,-remove.1]
+l1.m <- l1.m[,-remove.1]
+
+l5.f <- l5.f[,-remove.5]
+l5.m <- l5.m[,-remove.5]
+
+# make sure all matrices have same number of columns and same 
+# column manes
+dim(q1.f)
+dim(q1.m)
+dim(q5.f)
+dim(q5.m)
+dim(e1.f)
+dim(e1.m)
+dim(e5.f)
+dim(e5.m)
+dim(a1.f)
+dim(a1.m)
+dim(a5.f)
+dim(a5.m)
+dim(l1.f)
+dim(l1.m)
+dim(l5.f)
+dim(l5.m)
+
+# NB, last argument in str_sub intentionally empty, defaults to end of string
+identical(str_sub(colnames(q1.f),8,),str_sub(colnames(q1.m),6,))
+identical(str_sub(colnames(q5.f),8,),str_sub(colnames(q5.m),6,))
+identical(str_sub(colnames(e1.f),8,),str_sub(colnames(e1.m),6,))
+identical(str_sub(colnames(e5.f),8,),str_sub(colnames(e5.m),6,))
+identical(str_sub(colnames(q1.f),8,),str_sub(colnames(e1.f),8,))
+identical(str_sub(colnames(q1.f),8,),str_sub(colnames(e1.m),6,))
+identical(str_sub(colnames(q1.f),8,),str_sub(colnames(q5.f),8,))
+identical(str_sub(colnames(q1.f),8,),str_sub(colnames(q5.m),6,))
+identical(str_sub(colnames(q1.f),8,),str_sub(colnames(l1.f),8,))
+identical(str_sub(colnames(q1.f),8,),str_sub(colnames(l1.m),6,))
+identical(str_sub(colnames(q1.f),8,),str_sub(colnames(l5.f),8,))
+identical(str_sub(colnames(q1.f),8,),str_sub(colnames(l5.m),6,))
+
+rm(list=c("remove.1","remove.5"))
+```
+
+The last data cleaning step involves identifying ${_n}q_x$ values that are zero and replacing these with very small numbers. This is necessary so that we use the log function to transform these.
+
+```{r remove-zeros, eval = TRUE, echo = TRUE}
+length(q1.f) # values in q1.f
+length(q1.f[q1.f==0]) # zero cells in q1.f
+length(q5.f) # values in q5.f
+length(q5.f[q5.f==0]) # zero cells in q5.f
+
+length(q1.m) # values in q1.m
+length(q1.m[q1.m==0]) # zero cells in q1.m
+length(q5.m) # values in q5.m
+length(q5.m[q5.m==0]) # zero cells in q5.m
+
+# female
+q1.f.nz <- q1.f
+q1.f.nz[q1.f.nz==0] <- 0.000001
+q5.f.nz <- q5.f
+q5.f.nz[q5.f.nz==0] <- 0.000001
+
+# male
+q1.m.nz <- q1.m
+q1.m.nz[q1.m.nz==0] <- 0.000001
+q5.m.nz <- q5.m
+q5.m.nz[q5.m.nz==0] <- 0.000001
+
+cat("\n")
+length(q1.f.nz) # values in q1.f
+length(q1.f.nz[q1.f.nz==0]) # zero cells in q1.f
+length(q5.f.nz) # values in q5.f
+length(q5.f.nz[q5.f.nz==0]) # zero cells in q5.f
+
+length(q1.m.nz) # values in q1.m
+length(q1.m.nz[q1.m.nz==0]) # zero cells in q1.m
+length(q5.m.nz) # values in q5.m
+length(q5.m.nz[q5.m.nz==0]) # zero cells in q5.m
+```
+
+Take the log and logit transforms of the ${_n}q_x$ values.
+
+```{r log-logit-transform, eval = TRUE, echo = TRUE}
+# function for logit transformation
+logit <- function(x) {
+	return(log(x/(1-x)))
+}
+
+# function for inverse logit transformation 
+expit <- function(x) {
+	return(exp(x)/(1+exp(x)) ) 
+}
+
+# log and logit transform the female nqx
+q1l.f <- log(q1.f.nz)
+q1logit.f <- logit(q1.f.nz)
+q5l.f <- log(q5.f.nz)
+q5logit.f <- logit(q5.f.nz)
+
+# log and logit transform the male nqx
+q1l.m <- log(q1.m.nz)
+q1logit.m <- logit(q1.m.nz)
+q5l.m <- log(q5.m.nz)
+q5logit.m <- logit(q5.m.nz)
+```
+
+Check how many life tables are left and be sure all the data objects have the same number of life tables and age groups.
+
+```{r}
+dim(q1l.f)
+dim(q1logit.f)
+dim(q5l.f)
+dim(q5logit.f)
+
+dim(q1l.m)
+dim(q1logit.m)
+dim(q5l.m)
+dim(q5logit.m)
+```
+
+
+## Additional Indicator Calculation
+
+We need child, ${_5}q_0$, and adult, ${_45}q_15$, mortality values for females and males.  Calculate these from the $1\times1$ ${_n}q_x$ values and store in separate matrices, including the log and logit transformed values.  
+
+```{r mx-indicators, eval = TRUE, echo = TRUE}
+# function to generate 5q0 from a matrix of 1qx
+convert1qxTo5q0 <- function(q1) {
+  
+  # q1 is an age by life table matrix of 1qx
+  # q5 is 1 by life table matrix/vector of 5q0
+  
+  tmp.q <- rep(1,ncol(q1))
+  for (i in 1:5) {
+  	tmp.q <- tmp.q * (1-q1[i,])
+  }
+  q5 <- as.matrix(1-tmp.q) 
+  return(q5)
+}
+
+# function to generate 45q15 from a matrix of 1qx
+convert1qxTo45q15 <- function(q1) {
+  
+  # q1 is an age by life table matrix of 1qx
+  # q5 is 1 by life table matrix/vector of 45q15
+  
+  tmp.q <- rep(1,ncol(q1))
+  for (i in 16:60) {
+  	tmp.q <- tmp.q * (1-q1[i,])
+  }
+  q5 <- as.matrix(1-tmp.q)
+  return(q5)
+}
+
+# now actually create the child and adult mortality indicators
+
+# female
+
+# make matrix with 5q0 in row 1 and 45q15 in row 2
+Q.f <- rbind(t(convert1qxTo5q0(q1.f)),t(convert1qxTo45q15(q1.f)))
+# check for zeroes
+Q.f[Q.f==0]
+
+# log and logit
+Ql.f <- log(Q.f)
+Qlogit.f <- logit(Q.f)
+
+colnames(Q.f) <- colnames(q1.f)
+colnames(Ql.f) <- colnames(q1.f)
+colnames(Qlogit.f) <- colnames(q1.f)
+
+rownames(Q.f) <- c("Child Mortality","Adult Mortality")
+rownames(Ql.f) <- c("Child Mortality","Adult Mortality")
+rownames(Qlogit.f) <- c("Child Mortality","Adult Mortality")
+
+# male
+
+# make matrix with 5q0 in row 1 and 45q15 in row 2
+Q.m <- rbind(t(convert1qxTo5q0(q1.m)),t(convert1qxTo45q15(q1.m)))
+# check for zeroes
+Q.m[Q.m==0]
+
+# log and logit
+Ql.m <- log(Q.m)
+Qlogit.m <- logit(Q.m)
+
+colnames(Q.m) <- colnames(q1.m)
+colnames(Ql.m) <- colnames(q1.m)
+colnames(Qlogit.m) <- colnames(q1.m)
+
+rownames(Q.m) <- c("Child Mortality","Adult Mortality")
+rownames(Ql.m) <- c("Child Mortality","Adult Mortality")
+rownames(Qlogit.m) <- c("Child Mortality","Adult Mortality")
+```
+
+We now have everything we need to get going.  Clean up or clear stuff we don't need and save everything.
+
+```{r clean-up, eval = TRUE, echo = TRUE}
+# rm(list=c("download.result","hmd.1x1.list","hmd.5x1.list","remove","remove.1"
+#   ,"remove.5","i","tmp.q","count.lts","download.hmd","extract.lt.col","list.lts"
+#   ,"list.raw.lts","parse.lt","read.raw.lt","sex.per.age.switch"))
+save.image("../RData/hmd.qs.RData")
+# load("../RData/hmd.qs.RData")
+```
+
+
+# SVD Component Model of Mortality
+
+## *svdMod()* function
+
+*svdMod()* is a function that wraps up most of the operations needed to calculate and validate SVD-Comp models. This function does a lot and can be used in a variety of ways:
+
+* Calculate/estimate an SVD-component mortality model using a set of age-specific ${_n}q_x$ as inputs
+* Calculate/estimate a smoothed SVD-component mortality model using a set of age-specific ${_n}q_x$ as inputs
+* Randomly sample a set of age-specific ${_n}q_x$, calculate an SVD-component model of mortality (smoothed or not), predict ${_n}q_x$ for the not-sampled age-specific ${_n}q_x$, and summarize the prediction errors
+* All of this can be repeated a specified number of times
+* The return object contains very detailed results for everything that was requested
+
+Inputs to the function:
+
+* 'ql' are the logit-transformed input age-specific ${_n}q_x$ (life tables) arranged as age$\times$lifetable
+* 'Ql' are the logit-transformed summary mortality indicators: child mortality, ${_5}q_0$, and adult mortality, ${_45}q_{15}$, arranged in $2 \times n$ form where the first row is child mortality, the second adult mortality, and the columns correspond to life tables
+* 'N' is the number of times to repeat sampling/validation
+* 'S' is the fraction of life tables to include in the sample
+* 'offset' is a number used to offset the the age-specific mortality rates from the origin before calculating the SVD; this is an easy way to give each age group approximately the same weight in the SVD calculation; it is added back when predictions are made
+* 'retAll' is a switch indicating if all results should be returned or just summaries
+* 'adult' is a switch indicating if adult mortality, ${_45}q_{15}$, is supplied and should be used directly as an input to the model when predictions are made; if not, then child mortality, ${_5}q_0$, is the only direct input, and adult mortality is used *indirectly*  by predicting it from child mortality and then using it together with child mortality for the predictions for other ages
+* 'q0Fix' is a switch indicating if the *q0 fix* should be executed during predition
+* 'smooth' is a switch indicating if the SVD-comp model should be smoothed
+* 'C' specifies the number of components to include in the SVD-component model
+
+The return object is a large list that contains:
+
+* 'ql.samp' - a list of the sampled age-specific ${_n}q_x$, i.e. life tables, (one for each sample) 
+* 'ql.nsamp' - a list of the not sampled age-specific ${_n}q_x$ (one for each sample) 
+* 'names' - the names of the sampled life tables
+* 'svd' - a list of the SVD decompositions (one for each sample) of the sampled life tables
+* 'svd.sm' - a list of the smoothed SVD decompositions (one for each sample) of the sampled life tables
+* 'mods' - a list of the the regression return objects (one for each sample) from the regression models for each SVD component weight in the model, the model for adult mortality, and the model for the q0 fix
+* 'recon.samp' - a list of the predicted life tables (one for each sample) for life tables in the sample
+* 'error.samp' -  a list of the prediction errors (one for each sample) for the sampled life tables
+* 'recon.nsamp' -  a list of the predicted life tables (one for each sample) for life tables not in the sample 
+* 'error.nsamp' -  a list of the prediction errors (one for each sample) for the not sampled life tables
+* 'errsum.samp' -  a list of summaries (one for each sample) of in-sample errors, uses R's *summary()* function
+* 'errsum.nsamp' -  a list of summaries (one for each sample) of out-of-sample errors, uses R's *summary()* function
+* 'offset' - the *offset* value used when the function was called
+* 'retAll' - the *retAll* value used when the function was called
+* 'adult' - the *adult* value used when the function was called
+* 'q0fix' - the *q0fix* value used when the function was called
+* 'smooth' - the *smooth* value used when the function was called
+* 'C' - the *C* value used when the function was called
+
+A couple notes:
+
+* The input age-specific ${_n}q_x$ must all be logit-transformed, the function assumes this and uses an *expit* transformation to do predicitons on the natural scale
+* The 'mods' return object is very useful for doing predictions and building additional modeling features using the return object of this function
+* the 'retAll' option is included because full results can be *very* large, and returning the summaries is a much more compact way to do things if you need to run many times and don't need the detailed results each time
+
+```{r svdMod-function, eval = TRUE, echo = TRUE}
+svdMod <- function(ql,Ql,N,S,offset,retAll,adult,q0Fix,smooth,C=4,printS=FALSE) {
+
+# ql is input qs
+# Ql is input summary indicators (child and adult ql)
+# N is number of samples
+# S is sample fraction
+# offset is the SVD offset
+# retAll is switch to return 'all' or just error summaries
+# adult is a switch indicating whether to include adult mortality in the model
+# q0Fix is a switch to execute the q0 fix
+# smooth is a switch to smooth left singular vectors
+# C is number of components, default C=4
+# printS is a switch to turn off printing the sample number at each iteration
+
+	ret.ql.samp <- list(0) # sampled qls
+	ret.ql.nsamp <- list(0) # out of sample qls
+	ret.samp.names <- list(0) # sampled LT names
+	ret.svd <- list(0) # svd of sampled qls
+	ret.svd.sm <- list(0) # smooth svd of samlped qls
+	ret.mods <- list(0) # models
+	ret.recon.samp <- list(0) # sample reconstructions
+	ret.error.samp <- list(0) # sample errors
+	ret.recon.nsamp <- list(0) # out of sample reconstructions
+	ret.error.nsamp <- list(0) # out of sample errors
+	ret.errsum.samp <- list(0) # summary of sample errors
+	ret.errsum.nsamp <- list(0) # summary of out of sample errors
+
+	# Ensure C is in reasonable range: 1-4
+	if (C < 1 | C > 4) {
+	  C = 4
+	  print("Setting C=4")
+	}
+
+	cat("\n")
+	print(paste("Adult mortality is direct input to predictions:",adult))
+	print(paste("SVD model is smoothed:",smooth))
+	print(paste(N,"iterations"))
+	print(paste(round(S*100,0),"% sample fraction",sep=""))
+	print(paste(C,"components"))
+
+	if (S > 0) {
+
+		for (i in 1:N) {
+
+			if (printS) {print(paste("  Sample:",i))}
+
+			# pick the sample
+			if (S == 1) {
+				samp <- colnames(ql) # the sample is all LTs
+				nsamp <- NA # nothing in the out of sample
+			} else {
+			  # identify sample
+				samp <- sample(colnames(ql),ncol(ql)*S) 
+				# identify out of sample
+				nsamp <- colnames(ql)[-which(colnames(ql) %in% samp)]	
+			}
+			name <- paste("s",i,sep="") # give this sample a name
+
+			# store the sample
+			ret.samp.names[[i]] <- samp # store sampled LT names to return list
+			names(ret.samp.names)[i] <- name # name the sampled LT names
+
+			# store the sampled qls
+			ret.ql.samp[[i]] <- ql[,samp] # store sampled qls in return list
+			names(ret.ql.samp)[i] <- name	 # name the sampled qls
+
+			# store the out of sample qls
+			if (S == 1) {
+				ret.ql.nsamp[[i]] <- NA # no out of sample LTs
+			} else {
+				ret.ql.nsamp[[i]] <- ql[,nsamp] # store out of sample qls in return list
+			}
+			names(ret.ql.nsamp)[i] <- name # name out of sample qls
+
+			# calculate the svd of the sampled qls
+			svd <- svd(ql[,samp] - offset) # subtract offset before calculating svd
+
+			# store the SVD
+			ret.svd[[i]] <- svd # store svd in return list
+			names(ret.svd)[i] <- name # name the svd
+
+			# calculate transformations of *sampled* child mortality: input is logged
+			cm <- expit(Ql[1,samp]) # child mortality, natural scale
+			cml <- Ql[1,samp] # child mortality, logged
+			cmls <- cml^2 # square of logged child mortality
+			cmlc <- cml^3 # cube of logged child mortality
+
+			# calcualte transformations of *sampled* adult mortality: input is logged
+			am <- expit(Ql[2,samp]) # adult mortality, natural scale
+			aml <- Ql[2,samp] # adult mortality, logged
+			amls <- aml^2 # square of logged adult mortality
+			amlc <- aml^3 # cube of logged adult mortality
+
+			# calcualte one-way interaction of *sampled* child and adult mortality
+			cmlaml <- cml*aml
+
+			# model *sampled* adult mortality ~ child mortality
+			aml.betas <- lm(aml ~ cm + cml + cmls + cmlc)
+
+			# model *sampled* first four vs ~ child mortality and adult mortality
+			v1.betas <- lm(svd$v[,1] ~ cm + cml + cmls + cmlc + am + amls + amlc + cmlaml)
+			v2.betas <- lm(svd$v[,2] ~ cm + cml + cmls + cmlc + am + amls + amlc + cmlaml)
+			v3.betas <- lm(svd$v[,3] ~ cm + cml + cmls + cmlc + am + amls + amlc + cmlaml)
+			v4.betas <- lm(svd$v[,4] ~ cm + cml + cmls + cmlc + am + amls + amlc + cmlaml)
+
+			# predictions for all LTs, both sampled and out of sample
+			# start by transforming child mortality for all LTs
+			cml.p <- Ql[1,]
+			cm.p <- expit(cml.p)
+			cmls.p <- cml.p^2
+			cmlc.p <- cml.p^3
+
+			# predict the adult mortality that goes with this child mortality
+			# data frame of predictors
+			predictors.aml <- data.frame(cbind(cm.p,cml.p,cmls.p,cmlc.p))
+			# names for predictors that match the variable in the original model
+			colnames(predictors.aml) <- c("cm","cml","cmls","cmlc")
+			# predictions for adult mortality
+			if (adult) {
+				aml.p <- Ql[2,]
+			} else {
+				aml.p <- predict.lm(aml.betas,newdata=predictors.aml)
+			}
+
+			# predict vs using child mortality and (predicted) adult mortality
+			# transform predicted adult mortality
+			am.p <- expit(aml.p)
+			amls.p <- aml.p^2
+			amlc.p <- aml.p^3
+			cmlaml.p <- cml.p*aml.p
+			# data frame of predictors
+			predictors.vs <- data.frame(cbind(
+			  cm.p,cml.p,cmls.p,cmlc.p,am.p,amls.p,amlc.p,cmlaml.p))
+			# names for predictors that match the variables in the original regressions
+			colnames(predictors.vs) <- c(
+			  "cm","cml","cmls","cmlc","am","amls","amlc","cmlaml")
+			# predictions for each v
+			v1.p <- predict.lm(v1.betas,newdata=predictors.vs)
+			v2.p <- predict.lm(v2.betas,newdata=predictors.vs)
+			v3.p <- predict.lm(v3.betas,newdata=predictors.vs)
+			v4.p <- predict.lm(v4.betas,newdata=predictors.vs)
+			
+			# smooth left singular vectors
+			if (smooth) {
+				for (k in 2:6) {
+					t <- ksmooth(seq(1,dim(svd$u)[1],1),svd$u[,k],kernel = "normal", bandwidth = (k+1))
+					t$y[1:(k-1)] <- svd$u[,k][1:(k-1)]
+					svd$u[,k] <- t$y
+				}
+				# store the smooth SVD
+				ret.svd.sm[[i]] <- svd # store the smooth svd in return list
+				names(ret.svd.sm)[i] <- name # name the smooth svd
+			} else {
+				ret.svd.sm[[i]] <- NA
+				names(ret.svd.sm)[i] <- name # name the smooth svd
+			}
+
+			# reconstruct the predicted LTs
+			v <- cbind(v1.p,v2.p,v3.p,v4.p)  	# matrix of new predicted vs
+			r.p <- ql - ql # data frame for reconstructed values with names
+			for (z in 1:C) { # loop over C components
+			  # svd reconstruction; sum of rank-1 matrices, one for each v
+				r.p <- r.p + svd$d[z] * svd$u[,z] %*% t(v[,z]) 
+			}
+			r.p <- r.p + offset # add the offset back in
+
+			if (q0Fix) {
+				# fix up q0 prediction
+				# child mortality for sample LTs
+				cml <- Ql[1,samp] # sample child mortality
+				cmls <- cml^2 # square of sample child mortality
+				q0.betas <- lm(as.numeric(ql[1,samp]) ~ cml + cmls)	# q0 ~ cml + cmls
+				# predictors for all LTs
+				cml.p <- Ql[1,] # child mortality for all LTs
+				cmls.p <- cml.p^2 # square of child mortality for all LTs
+				predictors.q0 <- data.frame(cbind(cml.p,cmls.p))
+				colnames(predictors.q0) <- c("cml","cmls")
+				q0.p <- predict.lm(q0.betas,newdata=predictors.q0)
+				# replace the predicted values for q0 with those from model above
+				r.p[1,] <- q0.p 
+			}	else {
+			  q0.betas <- NA
+			}
+
+			# store the models
+			ret.mods[[i]] <- list(
+			  aml=aml.betas
+			  ,v1=v1.betas
+			  ,v2=v2.betas
+			  ,v3=v3.betas
+			  ,v4=v4.betas
+			  ,q0=q0.betas)
+			names(ret.mods)[i] <- name
+
+			# results: sampled LTs
+			# store the reconstructed sampled LTs
+			ret.recon.samp[[i]] <- r.p[,samp]
+			names(ret.recon.samp)[i] <- name
+
+			# store the errors in the reconstructed sampled LTs
+			ret.error.samp[[i]] <- expit(ql[,samp]) - expit(r.p[,samp])
+			names(ret.error.samp)[i] <- name
+
+			# store summaries of errors in sampled LTs
+			ret.errsum.samp[[i]] <- 
+			  summary(as.vector(as.matrix(ret.error.samp[[i]])))
+			names(ret.errsum.samp)[i] <- name
+
+			if (S == 1) {
+				# results: out of sample LTs
+				# store the reconstructed out of sample LTs
+				ret.recon.nsamp[[i]] <- NA
+				names(ret.recon.nsamp)[i] <- name
+
+				# store the errors in the reconstructed out of sample LTs
+				ret.error.nsamp[[i]] <- NA
+				names(ret.error.nsamp)[i] <- name
+
+				# store the summaries of errors in out of sample LTs
+				ret.errsum.nsamp[[i]] <- NA
+				names(ret.errsum.nsamp)[i] <- name
+			} else {
+				# results: out of sample LTs
+				# store the reconstructed out of sample LTs
+				ret.recon.nsamp[[i]] <- r.p[,nsamp]
+				names(ret.recon.nsamp)[i] <- name
+
+				# store the errors in the reconstructed out of sample LTs
+				ret.error.nsamp[[i]] <- expit(ql[,nsamp]) - expit(r.p[,nsamp])
+				names(ret.error.nsamp)[i] <- name
+
+				# store the summaries of errors in out of sample LTs
+				ret.errsum.nsamp[[i]] <- 
+				  summary(as.vector(as.matrix(ret.error.nsamp[[i]])))
+				names(ret.errsum.nsamp)[i] <- name
+			}
+
+		}
+
+		# put all the return lists together into one big list
+		if (retAll == TRUE) {
+			return(list(
+				ql.samp = ret.ql.samp # sampled qls
+				,ql.nsamp = ret.ql.nsamp # out of sample qls
+				,names = ret.samp.names # sampled LT names
+				,svd = ret.svd # svd of sampled qls
+				,svd.sm = ret.svd.sm # smooth svd of sampled qls
+				,mods = ret.mods # models
+				,recon.samp = ret.recon.samp # sample reconstructions
+				,error.samp = ret.error.samp # sample errors
+				,recon.nsamp = ret.recon.nsamp # out of sample reconstructions
+				,error.nsamp = ret.error.nsamp # out of sample errors
+				,errsum.samp = ret.errsum.samp # summary of sample errors
+				,errsum.nsamp = ret.errsum.nsamp # summary of out of sample errors
+				,offset = offset # the offset necessary to reconstruct
+				,retAll = retAll
+				,adult = adult
+				,q0fix = q0Fix
+				,smooth = smooth
+				,C=C
+			))
+		} else {
+			return(list(
+				errsum.samp = ret.errsum.samp # summary of sample errors
+				,errsum.nsamp = ret.errsum.nsamp # summary of out of sample errors
+			))
+		}
+	} else {
+		print("S must be larger than 0.0")
+		return()
+	}
+	
+	print("Done")
+
+}
+```
+
+## *ltPredict()* function
+
+*ltPredict()* is a function that uses a return object from *svdMod()* to predict new life tables.
+
+Inputs to the function:
+
+* 'mods' is an output object from *svdMod()*
+* 'smooth' is a switch indicating if the smoothed left singular vectors should be used for the prediction
+* 'cml' is a value/vector for the input level(s) of logit-scale child mortality, ${_5}q_0$
+* 'aml' is a value/vector for the input level(s) of logit-scale adult mortality, ${_45}q_{15}$
+
+The return object is:
+
+* 'r.p' -- a dataframe containing the predicted life table(s) 
+
+```{r ltPredict-function, eval = TRUE, echo = TRUE}
+ltPredict <- function(mods,smooth,cml,aml) {
+	
+	# mods is an output object from svdMod()
+	# cml is a vector of logit child mortality rates
+	# aml is a vector of logit adult mortality rates
+	# if aml not supplied, then aml predicted from cml
+	# smooth is a switch to use smoothed SVD if it's available
+
+	cm <- expit(cml)
+	cmls <- cml^2
+	cmlc <- cml^3
+	preds.aml <- data.frame(
+		cm = as.numeric(cm),
+		cml = as.numeric(cml),
+		cmls = as.numeric(cmls),
+		cmlc = as.numeric(cmlc)		
+	)
+	if(missing(aml)) {
+		# predict adult mortality
+		aml <- predict(mods$mods$s1$aml,newdata=preds.aml)
+	}
+	
+	# predict vs
+	am <- expit(aml)
+	amls <- aml^2
+	amlc <- aml^3
+	cmlaml <- cml*aml
+	preds.vs <- data.frame(
+		cm = as.numeric(cm),
+		cml = as.numeric(cml),
+		cmls = as.numeric(cmls),
+		cmlc = as.numeric(cmlc),
+		am = as.numeric(am),
+		amls = as.numeric(amls),
+		amlc = as.numeric(amlc),
+		cmlaml = as.numeric(cmlaml)	
+	)
+	v1 <- predict(mods$mods$s1$v1,newdata=preds.vs)
+	v2 <- predict(mods$mods$s1$v2,newdata=preds.vs)
+	v3 <- predict(mods$mods$s1$v3,newdata=preds.vs)
+	v4 <- predict(mods$mods$s1$v4,newdata=preds.vs)
+
+	# if smoothed SVD available
+	if (smooth & mods$smooth) {
+		svd <- mods$svd.sm$s1
+	} else {
+		svd <- mods$svd$s1
+	}
+	
+	# construct LTs
+	v <- cbind(v1,v2,v3,v4)
+	r.p <- matrix(data=0,ncol=length(cml),nrow=length(svd$u[,1]))						
+	for (z in 1:4) {		
+		r.p <- r.p + svd$d[z] * svd$u[,z] %*% t(v[,z]) 	
+	}
+	r.p <- r.p + mods$offset 
+	
+	# fix q0
+	if (mods$q0fix) {
+  	cmls <- cml^2
+  	preds.q0 <- data.frame(
+  		cml = as.numeric(cml),
+  		cmls = as.numeric(cmls)
+  	)
+  	r.p[1,] <- predict(mods$mods$s1$q0,newdata=preds.q0)
+	}
+  	
+	# fix up r.p
+	r.p <- data.frame(r.p)
+	colnames(r.p) <- paste("cml.",cml,sep="")
+	rownames(r.p) <- rownames(mods$ql.samp$s1)
+	
+	# returns the matrix of predicted values
+	return(r.p)
+	
+}
+```
+
+
+# Validation
+
+First, run the *svdComp()* function with one iteration and a 100% sample in both 'base' and 'smoothed' form using only child mortality as a direct input, i.e. 'adult' is set to FALSE, and specifying two components.  This will yield SVD-Comp models calibrated on the entire HMD data set. The *svdComp()* function provides a little feedback, here indicating that two-component models were run on one sample of 100% with the child mortality-only model, either base or smoothed.
+
+```{r svd-model-test, eval = TRUE, echo = TRUE}
+# specify some key parameters, just to be a bit more readable!
+adult <- FALSE
+smooth <- FALSE
+N <- 1
+S <- 1
+C <- 4
+offset <- 10
+# base model
+mod.1_0.m <- svdMod(q1logit.m,Qlogit.m,N,S,offset,TRUE,adult,TRUE,smooth,C)
+mod.1_0.f <- svdMod(q1logit.f,Qlogit.f,N,S,offset,TRUE,adult,TRUE,smooth,C)
+# smooth now
+smooth <- TRUE
+mod.1_0.sm.m <- svdMod(q1logit.m,Qlogit.m,N,S,offset,TRUE,adult,TRUE,smooth,C)
+mod.1_0.sm.f <- svdMod(q1logit.f,Qlogit.f,N,S,offset,TRUE,adult,TRUE,smooth,C)
+```
+
+To compare the predicted results from the SVD-comp model calibrated with the entire HMD to resutls produced by Wilmoth et al.'s Log Quad model, we must calculate five-year age group probabilities of dying, ${_t}q_x$, because Log Quad operates only with five-year age groups.  The following code uses the single-year age group predictions from SVD-comp to calculate five-year age group probabilities of dying.
+
+```{r make-five-year-predicted, eval = TRUE, echo = TRUE}
+# fast functions to calculate a vector of 5qx 
+#   for any five-year age group indexed from 0 by 1
+
+# ages 1-4
+oneToFourYear <- function(oneYear) {
+  return(1-prod(sapply(2:5, function(x,y) (1-y[x]), y=oneYear)))
+}
+
+# five-year age groups
+fiveYear <- function(start,oneYear) {
+    return(1-prod(sapply((start*5+1):(start*5+5), function(x,y) (1-y[x]), y=oneYear)))
+}
+
+# fast function to convert full schedule of 1qx into full schedule of 5qx
+fiveYearQ <- function(oneYear) {
+  sapply(0:(trunc(length(oneYear)/5-1)), function(x,y) fiveYear(x,y), y=oneYear)
+}
+
+# fast function to calculate 45q15 from 1qx
+adultQ <- function(oneYear) {
+  return(1-prod(sapply(16:60, function(x,y) (1-y[x]), y=oneYear)))
+}
+
+# fast function to calculate 5q0 from standard 5qx
+childQ5 <- function(fiveYear) {
+  return(1-prod(sapply(1:2, function(x,y) (1-y[x]), y=fiveYear)))
+}
+
+# fast function to calculate 45q15 from 5qx
+adultQ5 <- function(fiveYear) {
+  return(1-prod(sapply(5:13, function(x,y) (1-y[x]), y=fiveYear)))
+}
+
+# fast function to calculate a full standard 5-year age schedule
+standardFiveYear <- function(oneYear) {
+  l <- trunc(length(oneYear)/5)
+  c(oneYear[1],oneToFourYear(oneYear),fiveYearQ(oneYear)[2:l])
+}
+
+# examples
+# using single age schedule of 1qx
+#  adultQ(<data>)
+#  fiveYearQ(<data>)
+#  standardFiveYear(<data>)
+# using a matrix of age schedules of 1qx
+#  apply(data,2,<function:adultQ or fiveYearQ or standardFiveYear>)
+
+# function to calculate a matrix of 5qx from a matrix of 1qx
+convert1qxTo5qxApply <- function(q1) {
+  
+  # q1 contains values of 1qx and is an age by life table matrix
+  #   with at least two columns
+  
+  # q5 is retured: an age by life table matrix with 5qx
+
+  q5 <- apply(q1,2,standardFiveYear)
+  colnames(q5) <- colnames(q1)
+  rNames <- c("0","1-4")
+  for (i in seq(1,(trunc(nrow(q1)/5)-1),1)) {
+    rNames <- c(rNames,paste(i*5,(i*5+4),sep="-"))
+  }
+  rownames(q5) <- rNames
+  return(q5)
+}
+
+# simpler and more readable approach which turns out to be roughly as fast
+#   or faster in this markdown document!
+
+# function to convert 1qx to standard age group 5qx
+convert1qxTo5qx <- function(q1) {
+
+  # q1 contains values of 1qx and is an age by life table matrix
+  # q5 is retured: an age by life table matrix with 5qx
+  
+  q5 <- matrix(data=0,ncol=ncol(q1),nrow=23)
+  rNames <- rep("",23)
+  # age 0
+  q5[1,] <- as.matrix(q1[1,])
+  rNames[1] <- "0"
+  # ages 1-4
+  tmp.q <- rep(1,ncol(q1))
+  for (i in 2:5) {
+  	tmp.q <- tmp.q * (1-q1[i,])
+  }
+  q5[2,] <- as.matrix(1-tmp.q)
+  rNames[2] <- "1-4"
+  # five-year age groups for ages 5-105 (ending 110)
+  for (j in 1:21) {
+  	tmp.q <- rep(1,ncol(q1))
+  	for (i in (j*5+1):(j*5+5)) {
+  		tmp.q <- tmp.q * (1-q1[i,])
+  	}
+  q5[(j+2),] <- as.matrix(1-tmp.q)
+  rNames[(j+2)] <- paste((j*5),"-",(j*5+4),sep="")
+  }
+  rownames(q5) <- rNames
+  colnames(q5) <- colnames(q1)
+  return(q5)
+}
+
+# compare the speed of the two approaches
+start.time.apply <- Sys.time()
+tmp.apply <- convert1qxTo5qxApply(expit(mod.1_0.f$recon.samp$s1))
+stop.time.apply <- Sys.time()
+start.time.loop <- Sys.time()
+tmp.loop <- convert1qxTo5qxApply(expit(mod.1_0.f$recon.samp$s1))
+stop.time.loop <- Sys.time()
+# results!
+print(paste("Loop way:",stop.time.loop-start.time.loop))
+print(paste("Apply way:",stop.time.apply-start.time.apply))
+# apply way usually a tiny bit faster
+
+# check to be sure they produce same answer
+all.equal(tmp.loop,tmp.apply)
+# looks like it!
+rm(list=c("tmp.loop","tmp.apply"))
+
+# Now actually calculate the 5qx schedules from the predicted 1qx
+
+# female
+q5p.f <- convert1qxTo5qxApply(expit(mod.1_0.f$recon.samp$s1))
+
+# male
+q5p.m <- convert1qxTo5qxApply(expit(mod.1_0.m$recon.samp$s1))
+```
+
+R code supplied by Wilmoth et al. is used to calculate the predicted five-year age group probabilities of dying using the Log Quad model using the same inputs as those used by SVD-Comp: the ${_5}q_0$ and ${_45}q_{15}$ values stored in the 'Q.f' and 'Q.m' matrices -- logit-transformed ('Qlogit.f' and 'Qlogit.m') for SVD-Comp. For more information on the Log Quad model code download [here here](www.demog.berkeley.edu/~jrw/LogQuad) (www.demog.berkeley.edu/~jrw/LogQuad). First create a function to do the comparisons.
+
+```{r log-quad-comparison-function, eval = TRUE, echo = TRUE}
+# function to conduct comparison of predicted 5qx from SVD-Comp 
+#   and Log-Quad
+doComparison <- function(q1logit.f,Qlogit.f,q1logit.m,Qlogit.m
+                         ,q5.f,q5.m,N,S,offset,adult,smooth,C) {
+  
+  # q1logit.f - female logit 1qx
+  # Qlogit.f - female child and adult mortality levels
+  # q1logit.m - male logit 1qx
+  # Qlogit.m - male child and adult mortality levels
+  # q5.f - female 5qx values from HMD site
+  # q5.m - male 5qx values from HMD site
+  # N - number of samples taken
+  # S - sample fraction
+  # offset - size of offset
+  # adult - include adult mortality directly
+  # smooth - use smoothing
+  # C - number of components to use
+
+  # rerun models setting using adult mortality directly
+  mod.1_0.m <- svdMod(q1logit.m,Qlogit.m,N,S,10,TRUE,adult,TRUE,smooth,C)
+  mod.1_0.f <- svdMod(q1logit.f,Qlogit.f,N,S,10,TRUE,adult,TRUE,smooth,C)
+  
+  # store the predicted values from the model in five-year age groups
+  q5p.f <- convert1qxTo5qxApply(expit(mod.1_0.f$recon.samp$s1))
+  q5p.m <- convert1qxTo5qxApply(expit(mod.1_0.m$recon.samp$s1))
+  
+  # create Log-Quad predictions
+  # fit the log-quad using child mortality only
+  
+  # Source functions file
+  source("../R/logQuad/DataProgramsExamples/R/functions.R")
+  
+  # Create labels for age vectors
+  ages.5x1 <- c("0","1-4",paste(seq(5,105,5),seq(9,109,5),sep="-"),"110+")
+  sexes <- c("Female","Male","Total")
+  
+  # Import matrix of model coefficients
+  tmp1 <- read.csv("../R/logQuad/DataProgramsExamples/Data/coefs.logquad.HMD719.csv")
+  tmp2 <- array(c(as.matrix(tmp1[, 3:6]))
+                , dim=c(24, 3, 4)
+                , dimnames=list(ages.5x1, sexes, c("ax", "bx", "cx", "vx")))
+  coefs <- aperm(tmp2, c(1,3,2))
+  
+  # female
+  q5.lq.f <- q5.f - q5.f
+  e5.lq.f <- rbind(q5.f - q5.f,rep(0,ncol(q5.f)))
+  a5.lq.f <- rbind(q5.f - q5.f,rep(0,ncol(q5.f)))
+  l5.lq.f <- rbind(q5.f - q5.f,rep(0,ncol(q5.f)))
+  for (i in 1:ncol(q5.f)) {
+  	if (adult) {
+  		lqfit <- lthat.any2.logquad(coefs,"Female",Q5=Q.f[1,i],QQa=Q.f[2,i]) # with adult
+  	} else {
+  		lqfit <- lthat.any2.logquad(coefs,"Female",Q5=Q.f[1,i],k=0) # without adult
+  	}
+  	q5.lq.f[,i] <- lqfit$lt[1:23,2]
+  	a5.lq.f[,i] <- lqfit$lt[1:24,3]
+  	e5.lq.f[,i] <- lqfit$lt[1:24,8]
+  	l5.lq.f[,i] <- lqfit$lt[1:24,4]
+  }
+  q5l.lq.f <- log(q5.lq.f)
+  q5logit.lq.f <- logit(q5.lq.f)
+  
+  # male
+  q5.lq.m <- q5.m - q5.m
+  e5.lq.m <- rbind(q5.m - q5.m,rep(0,ncol(q5.m)))
+  a5.lq.m <- rbind(q5.m - q5.m,rep(0,ncol(q5.m)))
+  l5.lq.m <- rbind(q5.m - q5.m,rep(0,ncol(q5.m)))
+  for (i in 1:ncol(q5.m)) {
+  	if (adult) {
+  		lqfit <- lthat.any2.logquad(coefs,"Male",Q5=Q.m[1,i],QQa=Q.m[2,i]) # with adult
+  	} else {
+  		lqfit <- lthat.any2.logquad(coefs,"Male",Q5=Q.m[1,i],k=0) # without adult
+  	}	
+  	q5.lq.m[,i] <- lqfit$lt[1:23,2]
+  	a5.lq.m[,i] <- lqfit$lt[1:24,3]
+  	e5.lq.m[,i] <- lqfit$lt[1:24,8]
+  	l5.lq.m[,i] <- lqfit$lt[1:24,4]
+  }
+  q5l.lq.m <- log(q5.lq.m)
+  q5logit.lq.m <- logit(q5.lq.m)
+  
+  # compare the fits using the 5qx values obtained 
+  #   directly from the HMD web site, q5.f and q5.m
+  # construct a vector of comparison descriptors
+  
+  # females
+  comps.f <- matrix(data = 0, nrow = 2, ncol = 3)
+  colnames(comps.f) <- c("total.abs.error","mean.abs.error","max.error")
+  rownames(comps.f) <- c("comp","lq")
+  comps.f[1,1] <- sum(abs(q5.f - q5p.f))
+  comps.f[2,1] <- sum(abs(q5.f - q5.lq.f))
+  comps.f[,2] <- comps.f[,1]/(ncol(q5p.f)*nrow(q5p.f))
+  comps.f[1,3] <- max(q5.f - q5p.f)
+  comps.f[2,3] <- max(q5.f - q5.lq.f)
+  
+  # males
+  comps.m <- matrix(data = 0, nrow = 2, ncol = 3)
+  colnames(comps.m) <- c("total.abs.error","mean.abs.error","max.error")
+  rownames(comps.m) <- c("comp","lq")
+  comps.m[1,1] <- sum(abs(q5.m - q5p.m))
+  comps.m[2,1] <- sum(abs(q5.m - q5.lq.m))
+  comps.m[,2] <- comps.m[,1]/(ncol(q5p.m)*nrow(q5p.m))
+  comps.m[1,3] <- max(q5.m - q5p.m)
+  comps.m[2,3] <- max(q5.m - q5.lq.m)
+  
+  comps <- list(
+    female = comps.f
+    ,male = comps.m
+    
+    ,q5p.f = q5p.f
+    ,q5p.m = q5p.m
+    
+    ,q5.lq.f = q5.lq.f
+    ,e5.lq.f = e5.lq.f
+    ,a5.lq.f = a5.lq.f
+    ,l5.lq.f = l5.lq.f
+    ,q5l.lq.f = q5l.lq.f
+    ,q5logit.lq.f = q5logit.lq.f
+    
+    ,q5.lq.m = q5.lq.m
+    ,e5.lq.m = e5.lq.m
+    ,a5.lq.m = a5.lq.m
+    ,l5.lq.m = l5.lq.m
+    ,q5l.lq.m = q5l.lq.m
+    ,q5logit.lq.m = q5logit.lq.m
+  )
+  
+  return(comps)
+  
+}
+```
+
+Now compare the models first using only child mortality ${_5}q_0$ to predict and then using both child ${_5}q_0$ and adult ${_45}q_{15}$ mortality to predict.
+
+```{r, compare-SVD-LQ, eval = TRUE, echo = TRUE}
+# set basic model parameters
+smooth <- FALSE
+N <- 1
+S <- 1
+C <- 4
+offset <- 10
+
+# do comparison between SVD-Comp and Log-Quad using only child mortality
+#   as an input
+comps.child <- doComparison(q1logit.f,Qlogit.f,q1logit.m,Qlogit.m,q5.f
+                    ,q5.m,N,S,offset,adult=FALSE,smooth,C)
+# do comparison between SVD-Comp and Log-Quad using both child and adult
+#   motality as inputs
+comps.adult <- doComparison(q1logit.f,Qlogit.f,q1logit.m,Qlogit.m,q5.f
+                    ,q5.m,N,S,offset,adult=TRUE,smooth,C)
+
+# have a look
+cat("\n")
+comps.child$female
+comps.child$male
+cat("\n")
+comps.adult$female
+comps.adult$male
+```
+
+Run 50 50% samples to summarize one-year age group prediction errors.
+
+```{r run-50-50percent-samples, eval = TRUE, echo = TRUE}
+# 50 runs with 50% sampling proportion
+adult <- FALSE
+smooth <- FALSE
+N <- 50
+S <- 0.5
+mod.0_5.50.m <- svdMod(q1logit.m,Qlogit.m,N,S,10,TRUE,adult,TRUE,smooth,C)
+mod.0_5.50.f <- svdMod(q1logit.f,Qlogit.f,N,S,10,TRUE,adult,TRUE,smooth,C)
+
+# female
+
+# sampled errors
+# aggregate errors by age
+error.age.f <- matrix(data=0,ncol=0,nrow=length(mod.0_5.50.f$error.samp$s1[,1]))
+for (i in 1:N) {
+	#print(i)
+	error.age.f <- cbind(error.age.f,as.matrix(mod.0_5.50.f$error.samp[[i]]))
+}
+
+# out of sample errors
+#aggregate errors by age
+error.age.nsamp.f <- matrix(data=0,ncol=0,nrow=length(mod.0_5.50.f$error.nsamp$s1[,1]))
+for (i in 1:N) {
+	#print(i)
+	error.age.nsamp.f <- cbind(error.age.nsamp.f,as.matrix(mod.0_5.50.f$error.nsamp[[i]]))
+}
+
+# male
+
+# sampled errors
+# aggregate errors by age
+error.age.m <- matrix(data=0,ncol=0,nrow=length(mod.0_5.50.m$error.samp$s1[,1]))
+for (i in 1:N) {
+	#print(i)
+	error.age.m <- cbind(error.age.m,as.matrix(mod.0_5.50.m$error.samp[[i]]))
+}
+
+# out of sample errors
+#aggregate errors by age
+error.age.nsamp.m <- matrix(data=0,ncol=0,nrow=length(mod.0_5.50.m$error.nsamp$s1[,1]))
+for (i in 1:N) {
+	#print(i)
+	error.age.nsamp.m <- cbind(error.age.nsamp.m,as.matrix(mod.0_5.50.m$error.nsamp[[i]]))
+}
+```
+
+Run 50 samples with sampling fractions 10%, 30%, 50%, 70%, and 90% to summarize and characterize prediction errors as the sample fration varies.
+
+```{r run-50-vary-sample-size, eval = TRUE, echo = TRUE}
+# female
+adult <- FALSE
+smooth <- FALSE
+N <- 50
+for (S in seq(0.1,0.9,0.2)) {
+	assign(paste("qlPred_",S,".f",sep="")
+	       ,svdMod(q1logit.f,Ql.f,N,S,10,FALSE,adult,TRUE,smooth,C))
+}
+
+# ... this could be more elegant as a list or by usign 'assign' like above, but ...
+# summary errors
+errsum.meds.1.f <- matrix(data=0,ncol=2,nrow=N)
+errsum.iqrs.1.f <- matrix(data=0,ncol=2,nrow=N)
+for (i in 1:N) {
+	errsum.meds.1.f[i,1] <- qlPred_0.1.f$errsum.samp[[i]][3]
+	errsum.meds.1.f[i,2] <- qlPred_0.1.f$errsum.nsamp[[i]][3]
+	errsum.iqrs.1.f[i,1] <- 
+	  qlPred_0.1.f$errsum.samp[[i]][5] - qlPred_0.1.f$errsum.samp[[i]][2]
+	errsum.iqrs.1.f[i,2] <- 
+	  qlPred_0.1.f$errsum.nsamp[[i]][5] - qlPred_0.1.f$errsum.nsamp[[i]][2]
+}
+# summary errors
+errsum.meds.3.f <- matrix(data=0,ncol=2,nrow=N)
+errsum.iqrs.3.f <- matrix(data=0,ncol=2,nrow=N)
+for (i in 1:N) {
+	errsum.meds.3.f[i,1] <- qlPred_0.3.f$errsum.samp[[i]][3]
+	errsum.meds.3.f[i,2] <- qlPred_0.3.f$errsum.nsamp[[i]][3]
+	errsum.iqrs.3.f[i,1] <- 
+	  qlPred_0.3.f$errsum.samp[[i]][5] - qlPred_0.3.f$errsum.samp[[i]][2]
+	errsum.iqrs.3.f[i,2] <- 
+	  qlPred_0.3.f$errsum.nsamp[[i]][5] - qlPred_0.3.f$errsum.nsamp[[i]][2]
+}
+
+# summary errors
+errsum.meds.5.f <- matrix(data=0,ncol=2,nrow=N)
+errsum.iqrs.5.f <- matrix(data=0,ncol=2,nrow=N)
+for (i in 1:N) {
+	errsum.meds.5.f[i,1] <- qlPred_0.5.f$errsum.samp[[i]][3]
+	errsum.meds.5.f[i,2] <- qlPred_0.5.f$errsum.nsamp[[i]][3]
+	errsum.iqrs.5.f[i,1] <- 
+	  qlPred_0.5.f$errsum.samp[[i]][5] - qlPred_0.5.f$errsum.samp[[i]][2]
+	errsum.iqrs.5.f[i,2] <- 
+	  qlPred_0.5.f$errsum.nsamp[[i]][5] - qlPred_0.5.f$errsum.nsamp[[i]][2]
+}
+
+# summary errors
+errsum.meds.7.f <- matrix(data=0,ncol=2,nrow=N)
+errsum.iqrs.7.f <- matrix(data=0,ncol=2,nrow=N)
+for (i in 1:N) {
+	errsum.meds.7.f[i,1] <- qlPred_0.7.f$errsum.samp[[i]][3]
+	errsum.meds.7.f[i,2] <- qlPred_0.7.f$errsum.nsamp[[i]][3]
+	errsum.iqrs.7.f[i,1] <- 
+	  qlPred_0.7.f$errsum.samp[[i]][5] - qlPred_0.7.f$errsum.samp[[i]][2]
+	errsum.iqrs.7.f[i,2] <- 
+	  qlPred_0.7.f$errsum.nsamp[[i]][5] - qlPred_0.7.f$errsum.nsamp[[i]][2]
+}
+
+# summary errors
+errsum.meds.9.f <- matrix(data=0,ncol=2,nrow=N)
+errsum.iqrs.9.f <- matrix(data=0,ncol=2,nrow=N)
+for (i in 1:N) {
+	errsum.meds.9.f[i,1] <- qlPred_0.9.f$errsum.samp[[i]][3]
+	errsum.meds.9.f[i,2] <- qlPred_0.9.f$errsum.nsamp[[i]][3]
+	errsum.iqrs.9.f[i,1] <- 
+	  qlPred_0.9.f$errsum.samp[[i]][5] - qlPred_0.9.f$errsum.samp[[i]][2]
+	errsum.iqrs.9.f[i,2] <- 
+	  qlPred_0.9.f$errsum.nsamp[[i]][5] - qlPred_0.9.f$errsum.nsamp[[i]][2]
+}
+
+# male
+adult <- FALSE
+smooth <- FALSE
+N <- 50
+for (S in seq(0.1,0.9,0.2)) {
+	assign(paste("qlPred_",S,".m",sep="")
+	       ,svdMod(q1logit.m,Ql.m,N,S,10,FALSE,adult,TRUE,smooth,C))
+}
+
+# ... this could be more elegant as a list or by usign 'assign' like above, but ...
+# summary errors
+errsum.meds.1.m <- matrix(data=0,ncol=2,nrow=N)
+errsum.iqrs.1.m <- matrix(data=0,ncol=2,nrow=N)
+for (i in 1:N) {
+	errsum.meds.1.m[i,1] <- qlPred_0.1.m$errsum.samp[[i]][3]
+	errsum.meds.1.m[i,2] <- qlPred_0.1.m$errsum.nsamp[[i]][3]
+	errsum.iqrs.1.m[i,1] <- 
+	  qlPred_0.1.m$errsum.samp[[i]][5] - qlPred_0.1.m$errsum.samp[[i]][2]
+	errsum.iqrs.1.m[i,2] <- 
+	  qlPred_0.1.m$errsum.nsamp[[i]][5] - qlPred_0.1.m$errsum.nsamp[[i]][2]
+}
+# summary errors
+errsum.meds.3.m <- matrix(data=0,ncol=2,nrow=N)
+errsum.iqrs.3.m <- matrix(data=0,ncol=2,nrow=N)
+for (i in 1:N) {
+	errsum.meds.3.m[i,1] <- qlPred_0.3.m$errsum.samp[[i]][3]
+	errsum.meds.3.m[i,2] <- qlPred_0.3.m$errsum.nsamp[[i]][3]
+	errsum.iqrs.3.m[i,1] <- 
+	  qlPred_0.3.m$errsum.samp[[i]][5] - qlPred_0.3.m$errsum.samp[[i]][2]
+	errsum.iqrs.3.m[i,2] <- 
+	  qlPred_0.3.m$errsum.nsamp[[i]][5] - qlPred_0.3.m$errsum.nsamp[[i]][2]
+}
+
+# summary errors
+errsum.meds.5.m <- matrix(data=0,ncol=2,nrow=N)
+errsum.iqrs.5.m <- matrix(data=0,ncol=2,nrow=N)
+for (i in 1:N) {
+	errsum.meds.5.m[i,1] <- qlPred_0.5.m$errsum.samp[[i]][3]
+	errsum.meds.5.m[i,2] <- qlPred_0.5.m$errsum.nsamp[[i]][3]
+	errsum.iqrs.5.m[i,1] <- 
+	  qlPred_0.5.m$errsum.samp[[i]][5] - qlPred_0.5.m$errsum.samp[[i]][2]
+	errsum.iqrs.5.m[i,2] <- 
+	  qlPred_0.5.m$errsum.nsamp[[i]][5] - qlPred_0.5.m$errsum.nsamp[[i]][2]
+}
+
+# summary errors
+errsum.meds.7.m <- matrix(data=0,ncol=2,nrow=N)
+errsum.iqrs.7.m <- matrix(data=0,ncol=2,nrow=N)
+for (i in 1:N) {
+	errsum.meds.7.m[i,1] <- qlPred_0.7.m$errsum.samp[[i]][3]
+	errsum.meds.7.m[i,2] <- qlPred_0.7.m$errsum.nsamp[[i]][3]
+	errsum.iqrs.7.m[i,1] <- 
+	  qlPred_0.7.m$errsum.samp[[i]][5] - qlPred_0.7.m$errsum.samp[[i]][2]
+	errsum.iqrs.7.m[i,2] <- 
+	  qlPred_0.7.m$errsum.nsamp[[i]][5] - qlPred_0.7.m$errsum.nsamp[[i]][2]
+}
+
+# summary errors
+errsum.meds.9.m <- matrix(data=0,ncol=2,nrow=N)
+errsum.iqrs.9.m <- matrix(data=0,ncol=2,nrow=N)
+for (i in 1:N) {
+	errsum.meds.9.m[i,1] <- qlPred_0.9.m$errsum.samp[[i]][3]
+	errsum.meds.9.m[i,2] <- qlPred_0.9.m$errsum.nsamp[[i]][3]
+	errsum.iqrs.9.m[i,1] <- 
+	  qlPred_0.9.m$errsum.samp[[i]][5] - qlPred_0.9.m$errsum.samp[[i]][2]
+	errsum.iqrs.9.m[i,2] <- 
+	  qlPred_0.9.m$errsum.nsamp[[i]][5] - qlPred_0.9.m$errsum.nsamp[[i]][2]
+}
+```
+
+
+# Plotting
+
+Most plotting is done using *ggplot*. First load the necessary packages. The plots are not generated in the same order of appearance as the paper.
+
+Plot the basic age $\times$ age relationships among $_{5}q_x$ for all ages and both sexes and save as (very large) PDF files.
+
+```{r plot-basic-age-relationships, eval = TRUE, echo = TRUE}
+# age relationships
+
+# female
+pdf(file="../figures/femaleLogit(q)AgeScatterplots.pdf")
+qln.f <- as.matrix(q1logit.f)
+nr <- nrow(qln.f)
+for (i in seq(0,100,5)) {
+  for (j in seq(i,100,5)) {
+    plot(qln.f[(j+1),] ~ qln.f[(i+1),]
+         ,cex=0.1,xlab=paste("Age ",i,sep="")
+         ,ylab=paste("Age ",j,sep="")
+         ,xlim=c(-12,0),ylim=c(-12,0)
+         ,main="Logit(q) by Logit(q) in 5-year Age Groups")
+  }
+}
+dev.off()
+
+# male
+pdf(file="../figures/maleLogit(q)AgeScatterplots.pdf")
+qln.m <- as.matrix(q1logit.m)
+nr <- nrow(qln.m)
+for (i in seq(0,100,5)) {
+  for (j in seq(i,100,5)) {
+    plot(qln.m[(j+1),] ~ qln.m[(i+1),]
+         ,cex=0.1,xlab=paste("Age ",i,sep="")
+         ,ylab=paste("Age ",j,sep="")
+         ,xlim=c(-12,0),ylim=c(-12,0)
+         ,main="Logit(q) by Logit(q) in 5-year Age Groups")
+  }
+}
+dev.off()
+
+rm(list=c("nr","i","j"))
+```
+
+Plot the SVD-comp and Log Quad error distributions by sex and age using 25%, 50%, and 75% quantiles and whiskers to 10% and 90%.
+
+```{r plot-log-quad-comparison, eval = TRUE, echo = TRUE}
+# the predicted values from both models are stored in comps.child and comps.adult;
+#   we are making comparisons using the child-only predictions
+#   the q5.x values are straight from HMD
+# errors on natural scale
+# female
+errors.comp.f <- q5.f - comps.child$q5p.f
+errors.lq.f <- q5.f - comps.child$q5.lq.f
+# male
+errors.comp.m <- q5.m - comps.child$q5p.m
+errors.lq.m <- q5.m - comps.child$q5.lq.m
+
+# reshape the data
+
+# female
+ecf <- melt(as.matrix(errors.comp.f))
+elf <- melt(as.matrix(errors.lq.f))
+ecf <- cbind(ecf[,c(1,3)],rep("SVD-Comp",nrow(ecf)))
+colnames(ecf) <- c("Age (years)","Error","Model")
+elf <- cbind(elf[,c(1,3)],rep("Log-Quad",nrow(elf)))
+colnames(elf) <- c("Age (years)","Error","Model")
+ef <- rbind(ecf,elf)
+
+# male
+ecm <- melt(as.matrix(errors.comp.m))
+elm <- melt(as.matrix(errors.lq.m))
+ecm <- cbind(ecm[,c(1,3)],rep("SVD-Comp",nrow(ecm)))
+colnames(ecm) <- c("Age (years)","Error","Model")
+elm <- cbind(elm[,c(1,3)],rep("Log-Quad",nrow(elm)))
+colnames(elm) <- c("Age (years)","Error","Model")
+em <- rbind(ecm,elm)
+
+efn <- cbind(ef,"Female")
+colnames(efn) <- c("Age (years)","Error","Model","Sex")
+emn <- cbind(em,"Male")
+colnames(emn) <- c("Age (years)","Error","Model","Sex")
+
+e <- rbind(efn,emn)
+
+e.sum <- ddply(e,.(Sex, `Age (years)`, Model),
+	summarize,
+	ymin = quantile(Error,.1),
+	ymax = quantile(Error,.9),
+	middle = median(Error),
+	lower = quantile(Error,0.25),
+	upper = quantile(Error,0.75)
+)
+
+ggplot(data = e.sum, aes(x=`Age (years)`)) + 
+	geom_boxplot(aes(fill=Model,ymin = ymin,ymax = ymax
+	                 ,middle = middle,upper = upper
+	                 ,lower= lower),stat='identity',size=0.2) +
+	scale_y_continuous(limits = c(-0.08,0.08)) +
+	# theme(legend.justification=c(1,0), legend.position=c(.22,0.02)) +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+	theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+	geom_hline(yintercept=0,colour="white",lwd=.2) +
+	facet_wrap(~Sex,ncol=1) +	
+	labs(y="Error")	
+ggsave("../figures/fig3.pdf",width=6.5,height=6.5,units=c("in"))
+
+# clean up
+rm(list=c("e.sum","e","efn","emn","em","elm","ecm","ef","elf","ecf"))
+```
+
+Plot the example mortality schedules with data and predictions from SVD-Comp. Use France 1978 as a low mortality example and Sweden 1751 as a high mortality example.
+
+```{r plot-example-data, eval = TRUE, echo = TRUE}
+# calculate the total absolute error per life table
+tot.abs.err.f <- colSums(abs(errors.comp.f))
+tot.abs.err.m <- colSums(abs(errors.comp.m))
+# using that metric, look for best fitting female and male LTs
+best.f <- which(tot.abs.err.f==min(tot.abs.err.f))
+best.f
+best.m <- which(tot.abs.err.m==min(tot.abs.err.m))
+best.m
+# looks like East Germany 2006 for females and Denmark 2010 for males
+
+# find the earliest Swedish LT
+# cat(colnames(q1.f),sep="\n") # lists all the female LTs; use with caution - very long
+swe.f.1751 <- which(colnames(q1.f)=="female.SWE.1751")
+swe.f.1751
+swe.m.1751 <- which(colnames(q1.m)=="male.SWE.1751")
+swe.m.1751
+# looks like Sweden 1751 is number 4,140; double check
+cat(colnames(q1.f)[(swe.f.1751-3):(swe.f.1751+3)],sep="\n")
+            
+# have a quick look at both the 'best' fitting LTs and choose one
+i <- best.f
+plot(q1logit.f[,i],) 											
+points(q1logit.m[,i],col="red") 								
+points(mod.1_0.f$recon.samp$s1[,i],type="l") 			
+points(mod.1_0.m$recon.samp$s1[,i],type="l",col="red") 		
+i <- best.m
+plot(q1logit.f[,i],) 											
+points(q1logit.m[,i],col="red") 								
+points(mod.1_0.f$recon.samp$s1[,i],type="l") 			
+points(mod.1_0.m$recon.samp$s1[,i],type="l",col="red")
+# don't like either of them much as pretty examples
+
+# Austria 1990 is nice example of low mortality - will use that for low mortality example
+aut.f.1990 <- which(colnames(q1.f)=="female.AUT.1990")
+aut.f.1990
+aut.m.1990 <- which(colnames(q1.m)=="male.AUT.1990")
+aut.m.1990
+i <- aut.f.1990
+plot(q1logit.f[,i],) 											
+points(q1logit.m[,i],col="red") 								
+points(mod.1_0.f$recon.samp$s1[,i],type="l") 			
+points(mod.1_0.m$recon.samp$s1[,i],type="l",col="red")
+
+# data - use Sweden 1751 and Austria 1990:
+i.low <- aut.f.1990
+i.high <- swe.f.1751
+tmp.1.m <- cbind(rep("Male",110),rownames(q1logit.m)
+                 ,rep("Sweden 1751",110),"Data",q1logit.m[,i.high])
+tmp.1.f <- cbind(rep("Female",110),rownames(q1logit.m)
+                 ,rep("Sweden 1751",110),"Data",q1logit.f[,i.high])
+tmp.2.m <- cbind(rep("Male",110),rownames(q1logit.m)
+                 ,rep("Austria 1990",110),"Data",q1logit.m[,i.low])
+tmp.2.f <- cbind(rep("Female",110),rownames(q1logit.m)
+                 ,rep("Austria 1990",110),"Data",q1logit.f[,i.low])
+data.fig1 <- rbind(tmp.1.m,tmp.1.f,tmp.2.m,tmp.2.f)
+
+data.fig1.df <- data.frame(
+	Sex = as.character(data.fig1[,1]),
+	Age = as.numeric(data.fig1[,2]),
+	LT = as.character(data.fig1[,3]),
+	Type = as.character(data.fig1[,4]),
+	Value = as.numeric(data.fig1[,5])
+)
+
+# predictions
+m.1.p <- mod.1_0.m$recon.samp$s1[,i.high]
+f.1.p <- mod.1_0.f$recon.samp$s1[,i.high]
+m.2.p <- mod.1_0.m$recon.samp$s1[,i.low]
+f.2.p <- mod.1_0.f$recon.samp$s1[,i.low]
+tmp.1.m <- cbind(rep("Male",110),rownames(q1logit.m)
+                 ,rep("Sweden 1751",110),"Predicted",m.1.p)
+tmp.1.f <- cbind(rep("Female",110),rownames(q1logit.m)
+                 ,rep("Sweden 1751",110),"Predicted",f.1.p)
+tmp.2.m <- cbind(rep("Male",110),rownames(q1logit.m)
+                 ,rep("Austria 1990",110),"Predicted",m.2.p)
+tmp.2.f <- cbind(rep("Female",110),rownames(q1logit.m)
+                 ,rep("Austria 1990",110),"Predicted",f.2.p)
+pred.fig1 <- rbind(tmp.1.m,tmp.1.f,tmp.2.m,tmp.2.f)
+
+pred.fig1.df <- data.frame(
+	Sex = as.character(pred.fig1[,1]),
+	Age = as.numeric(pred.fig1[,2]),
+	LT = as.character(pred.fig1[,3]),
+	Type = as.character(pred.fig1[,4]),
+	Value = as.numeric(pred.fig1[,5])
+)
+
+# Plot
+ggplot(data = data.fig1.df, aes(x=Age, y=Value
+                                , group=interaction(Sex,LT), colour=Sex, shape=LT)) +
+	geom_point(size=1.5) +
+	geom_line(data = pred.fig1.df, aes(x=Age
+	                                   , y=Value, group=interaction(Sex,LT)
+	                                   , colour=Sex), size=1) +
+	scale_x_continuous(breaks=seq(0,110,5)) +
+	labs(y = expression(''[1]*'q'[x]*' (logit scale)'), x = "Age (years)") +
+	# theme(legend.justification=c(1,0), legend.position=c(0.98,0.02)) +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+	scale_shape_discrete(name = "Life Table")
+ggsave("../figures/fig1.pdf",width=6.5,height=6.5,units=c("in"))
+
+# clean up
+rm(list=c("pred.fig1.df","pred.fig1","tmp.2.f","tmp.2.m","tmp.1.f","tmp.1.m"
+  ,"f.2.p","m.2.p","f.1.p","m.1.p","data.fig1.df","data.fig1","i.low"
+  ,"i.high","tot.abs.err.f","tot.abs.err.m"))
+```
+
+Plot the scaled left singular vectors of the SVD decompositions of logit-transformed ${_1}q_x$.
+
+```{r plot-svd, eval = TRUE, echo = TRUE}
+# svds
+svd.m <- mod.1_0.m$svd$s1
+svd.f <- mod.1_0.f$svd$s1
+
+# scaled us
+u1.m <- cbind(rep("Male",110),rownames(q1logit.m)
+              ,rep("u1",110),svd.m$d[1]*svd.m$u[,1])
+u2.m <- cbind(rep("Male",110),rownames(q1logit.m)
+              ,rep("u2",110),svd.m$d[2]*svd.m$u[,2])
+u3.m <- cbind(rep("Male",110),rownames(q1logit.m)
+              ,rep("u3",110),-1*svd.m$d[3]*svd.m$u[,3])
+u4.m <- cbind(rep("Male",110),rownames(q1logit.m)
+              ,rep("u4",110),svd.m$d[4]*svd.m$u[,4])
+
+u1.f <- cbind(rep("Female",110),rownames(q1logit.m)
+              ,rep("u1",110),svd.f$d[1]*svd.f$u[,1])
+u2.f <- cbind(rep("Female",110),rownames(q1logit.m)
+              ,rep("u2",110),svd.f$d[2]*svd.f$u[,2])
+u3.f <- cbind(rep("Female",110),rownames(q1logit.m)
+              ,rep("u3",110),svd.f$d[3]*svd.f$u[,3])
+u4.f <- cbind(rep("Female",110),rownames(q1logit.m)
+              ,rep("u4",110),svd.f$d[4]*svd.f$u[,4])
+
+us <- rbind(u1.m,u2.m,u3.m,u4.m,u1.f,u2.f,u3.f,u4.f)
+
+us.df <- data.frame(
+	Sex = as.character(us[,1]),
+	Age = as.numeric(us[,2]),
+	U = as.character(us[,3]),
+	Value = as.numeric(us[,4])
+)
+save(file="../RData/us.RData",compress=TRUE,list=c("us.df"))
+write.csv(us.df,file="../tables/us.csv")
+# str(us.df)
+
+# smooth svds
+# svds
+svd.sm.m <- mod.1_0.sm.m$svd.sm$s1
+svd.sm.f <- mod.1_0.sm.f$svd.sm$s1
+
+# us
+u1.sm.m <- cbind(rep("Male",110),rownames(q1logit.m)
+                 ,rep("u1",110),svd.sm.m$d[1]*svd.sm.m$u[,1])
+u2.sm.m <- cbind(rep("Male",110),rownames(q1logit.m)
+                 ,rep("u2",110),svd.sm.m$d[2]*svd.sm.m$u[,2])
+u3.sm.m <- cbind(rep("Male",110),rownames(q1logit.m)
+                 ,rep("u3",110),-1*svd.sm.m$d[3]*svd.sm.m$u[,3])
+u4.sm.m <- cbind(rep("Male",110),rownames(q1logit.m)
+                 ,rep("u4",110),svd.sm.m$d[4]*svd.sm.m$u[,4])
+
+u1.sm.f <- cbind(rep("Female",110),rownames(q1logit.m)
+                 ,rep("u1",110),svd.sm.f$d[1]*svd.sm.f$u[,1])
+u2.sm.f <- cbind(rep("Female",110),rownames(q1logit.m)
+                 ,rep("u2",110),svd.sm.f$d[2]*svd.sm.f$u[,2])
+u3.sm.f <- cbind(rep("Female",110),rownames(q1logit.m)
+                 ,rep("u3",110),svd.sm.f$d[3]*svd.sm.f$u[,3])
+u4.sm.f <- cbind(rep("Female",110),rownames(q1logit.m)
+                 ,rep("u4",110),svd.sm.f$d[4]*svd.sm.f$u[,4])
+
+us.sm <- rbind(u1.sm.m,u2.sm.m,u3.sm.m
+               ,u4.sm.m,u1.sm.f,u2.sm.f,u3.sm.f,u4.sm.f)
+
+us.sm.df <- data.frame(
+	Sex = as.character(us.sm[,1]),
+	Age = as.numeric(us.sm[,2]),
+	U = as.character(us.sm[,3]),
+	Value = as.numeric(us.sm[,4])
+)
+save(file="../RData/us-smooth.RData",compress=TRUE,list=c("us.sm.df"))
+write.csv(us.sm.df,file="../tables/us-smooth.csv")
+# str(us.sm.df)
+
+# Plot
+
+# data for horizontal lines at 0	
+hlines <- data.frame(
+	U = as.character(c("u1","u2","u3","u4")),
+	y = as.numeric(c(NA,0,0,0))
+)
+
+u.names <- list(
+	'U#1' = expression('s'[1]*'u'[1]),	
+	'U#2' = expression('s'[2]*'u'[2]),
+	'U#3' = expression('s'[3]*'u'[3]),
+	'U#4' = expression('s'[4]*'u'[4])
+)
+u.names
+
+u.labeller <- function(variable,value){
+  return(u.names[value])
+}
+
+# Plot
+ggplot(data = us.df, aes(x=Age, y=Value, group=Sex, colour=Sex)) +
+  geom_line() + 
+  geom_line(data = us.sm.df, aes(x=Age, y=Value), size=1) +
+  geom_hline(data = hlines, aes(yintercept = y)) +
+  scale_x_continuous(breaks=seq(0,110,10)) +
+  facet_wrap(~U, scales="free", labeller=u.labeller) +
+  labs(y = "Scaled Left Singular Vector Values (logit scale)", x = "Age (years)") +
+  # theme(legend.justification=c(1,0), legend.position=c(0.99,0.56)) 
+  theme(legend.position="bottom", legend.box = "horizontal")
+ggsave("../figures/fig2.pdf",width=6.5,height=6.5,units=c("in"))
+
+# clean up
+rm(list=c("u.labeller","u.names","hlines","us.sm.df","us.sm","u4.sm.f"
+  ,"u3.sm.f","u2.sm.f","u1.sm.f","u4.sm.m","u3.sm.m","u2.sm.m","u1.sm.m"
+  ,"svd.sm.f","svd.sm.m","us.df","us","u4.f","u3.f","u2.f","u1.f"
+  ,"u4.m","u3.m","u2.m","u1.m","svd.f","svd.m"))
+```
+
+Plot the single-year prediction error distributions from 50 50% samples.
+
+```{r plot-single-year-errors, eval = TRUE, echo = TRUE}
+# female
+esf <- melt(error.age.f)
+esf <- cbind(esf[,c(1,3)],"In","Female")
+colnames(esf) <- c("Age","Error","Sample","Sex")
+
+ensf <- melt(error.age.nsamp.f)
+ensf <- cbind(ensf[,c(1,3)],"Out","Female")
+colnames(ensf) <- c("Age","Error","Sample","Sex")
+rm(list=c("error.age.f","error.age.nsamp.f"))
+
+ef <- rbind(esf,ensf)
+ef$Age <- factor(ef$Age)
+rm(list=c("esf","ensf"))
+
+# male
+esm <- melt(error.age.m)
+esm <- cbind(esm[,c(1,3)],"In","Male")
+colnames(esm) <- c("Age","Error","Sample","Sex")
+
+ensm <- melt(error.age.nsamp.m)
+ensm <- cbind(ensm[,c(1,3)],"Out","Male")
+colnames(ensm) <- c("Age","Error","Sample","Sex")
+rm(list=c("error.age.m","error.age.nsamp.m"))
+
+em <- rbind(esm,ensm)
+em$Age <- factor(em$Age)
+rm(list=c("esm","ensm"))
+
+# combine male and female
+eb <- rbind(em,ef)
+rm(list=c("em","ef"))
+
+# order female first
+eb[,4] <- factor(eb[,4], levels=c("Female","Male"))
+# str(eb)
+
+e.sum <- ddply(eb,.(Sex, Age, Sample),
+	summarize,
+	ymin = quantile(Error,.1),
+	ymax = quantile(Error,.9),
+	middle = median(Error),
+	lower = quantile(Error,0.25),
+	upper = quantile(Error,0.75)
+)
+
+ggplot(data = e.sum, aes(x=Age)) + 
+	geom_boxplot(aes(fill=Sample
+	                 ,ymin = ymin,ymax = ymax
+	                 ,middle = middle
+	                 ,upper = upper
+	                 ,lower=lower)
+	             ,stat='identity',size=0.2) +
+	# scale_y_continuous(limits = c(-0.03,0.03)) +
+	scale_x_discrete(breaks=seq(0,110,10)) +
+	# theme(legend.justification=c(1,0), legend.position=c(.15,0.02)) +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+	facet_wrap(~Sex, ncol=1) +	
+	labs(x="Age (years)", y="Error")	
+ggsave("../figures/fig4.pdf",width=6.5,height=6.5,units=c("in"))
+
+# clean up
+rm(list=c("e.sum","eb","mod.0_5.50.f","mod.0_5.50.m"))
+```
+
+Plot the prediction error distributions by sample fraction for 50 50% samples
+
+```{r plot-sample-size-error-dists, eval = TRUE, echo = TRUE}
+# medians
+# female
+es.s.f <- rbind(
+	cbind("Female","In","10%",errsum.meds.1.f[,1]),
+	cbind("Female","In","30%",errsum.meds.3.f[,1]),
+	cbind("Female","In","50%",errsum.meds.5.f[,1]),
+	cbind("Female","In","70%",errsum.meds.7.f[,1]),
+	cbind("Female","In","90%",errsum.meds.9.f[,1])
+)
+
+es.ns.f <- rbind(
+	cbind("Female","Out","10%",errsum.meds.1.f[,2]),
+	cbind("Female","Out","30%",errsum.meds.3.f[,2]),
+	cbind("Female","Out","50%",errsum.meds.5.f[,2]),
+	cbind("Female","Out","70%",errsum.meds.7.f[,2]),
+	cbind("Female","Out","90%",errsum.meds.9.f[,2])
+)
+
+es.f <- rbind(es.s.f,es.ns.f)
+
+es.f.df <- data.frame(
+	Sex = as.character(es.f[,1]),
+	Sample = as.character(es.f[,2]),
+	Fraction = as.character(es.f[,3]),
+	Median = as.numeric(es.f[,4])
+)
+# str(es.f.df)
+
+# male
+es.s.m <- rbind(
+	cbind("Male","In","10%",errsum.meds.1.m[,1]),
+	cbind("Male","In","30%",errsum.meds.3.m[,1]),
+	cbind("Male","In","50%",errsum.meds.5.m[,1]),
+	cbind("Male","In","70%",errsum.meds.7.m[,1]),
+	cbind("Male","In","90%",errsum.meds.9.m[,1])
+)
+
+es.ns.m <- rbind(
+	cbind("Male","Out","10%",errsum.meds.1.m[,2]),
+	cbind("Male","Out","30%",errsum.meds.3.m[,2]),
+	cbind("Male","Out","50%",errsum.meds.5.m[,2]),
+	cbind("Male","Out","70%",errsum.meds.7.m[,2]),
+	cbind("Male","Out","90%",errsum.meds.9.m[,2])
+)
+
+es.m <- rbind(es.s.m,es.ns.m)
+
+es.m.df <- data.frame(
+	Sex = as.character(es.m[,1]),
+	Sample = as.character(es.m[,2]),
+	Fraction = as.character(es.m[,3]),
+	Median = as.numeric(es.m[,4])
+)
+# str(es.m.df)
+
+es.df <- rbind(es.f.df,es.m.df)
+# str(es.df)
+
+# order female first
+es.df[,1] <- factor(es.df[,1], levels=c("Female","Male"))
+# str(es.df)
+
+e.sum <- ddply(es.df,.(Sex, Sample, Fraction),
+	summarize,
+	ymin = quantile(Median,.1),
+	ymax = quantile(Median,.9),
+	middle = median(Median),
+	lower = quantile(Median,0.25),
+	upper = quantile(Median,0.75)
+)
+
+ggplot(data = e.sum, aes(x=Fraction)) + 
+	geom_boxplot(aes(fill=Sample
+	                 ,ymin = ymin
+	                 ,ymax = ymax
+	                 ,middle = middle
+	                 ,upper = upper
+	                 ,lower=lower),stat='identity',size=0.2) +
+  geom_hline(yintercept=0) +
+  # scale_y_continuous(limits = c(-2e-05,4.5e-05)) +
+	# theme(legend.justification=c(1,0), legend.position=c(0.85,.56)) +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+	labs(y = "Median Error", x = "Sample Fraction") +
+	facet_wrap(~Sex,ncol=1,scale="free") +
+	labs(y="Median Error")	
+ggsave("../figures/fig5a.pdf",width=6.5,height=6.5,units=c("in"))
+
+# iqrs
+# female
+es.s.f <- rbind(
+	cbind("Female","In","10%",errsum.iqrs.1.f[,1]),
+	cbind("Female","In","30%",errsum.iqrs.3.f[,1]),
+	cbind("Female","In","50%",errsum.iqrs.5.f[,1]),
+	cbind("Female","In","70%",errsum.iqrs.7.f[,1]),
+	cbind("Female","In","90%",errsum.iqrs.9.f[,1])
+)
+
+es.ns.f <- rbind(
+	cbind("Female","Out","10%",errsum.iqrs.1.f[,2]),
+	cbind("Female","Out","30%",errsum.iqrs.3.f[,2]),
+	cbind("Female","Out","50%",errsum.iqrs.5.f[,2]),
+	cbind("Female","Out","70%",errsum.iqrs.7.f[,2]),
+	cbind("Female","Out","90%",errsum.iqrs.9.f[,2])
+)
+
+es.f <- rbind(es.s.f,es.ns.f)
+
+es.f.df <- data.frame(
+	Sex = as.character(es.f[,1]),
+	Sample = as.character(es.f[,2]),
+	Fraction = as.character(es.f[,3]),
+	Median = as.numeric(es.f[,4])
+)
+# str(es.f.df)
+
+# male
+es.s.m <- rbind(
+	cbind("Male","In","10%",errsum.iqrs.1.m[,1]),
+	cbind("Male","In","30%",errsum.iqrs.3.m[,1]),
+	cbind("Male","In","50%",errsum.iqrs.5.m[,1]),
+	cbind("Male","In","70%",errsum.iqrs.7.m[,1]),
+	cbind("Male","In","90%",errsum.iqrs.9.m[,1])
+)
+
+es.ns.m <- rbind(
+	cbind("Male","Out","10%",errsum.iqrs.1.m[,2]),
+	cbind("Male","Out","30%",errsum.iqrs.3.m[,2]),
+	cbind("Male","Out","50%",errsum.iqrs.5.m[,2]),
+	cbind("Male","Out","70%",errsum.iqrs.7.m[,2]),
+	cbind("Male","Out","90%",errsum.iqrs.9.m[,2])
+)
+
+es.m <- rbind(es.s.m,es.ns.m)
+
+es.m.df <- data.frame(
+	Sex = as.character(es.m[,1]),
+	Sample = as.character(es.m[,2]),
+	Fraction = as.character(es.m[,3]),
+	Median = as.numeric(es.m[,4])
+)
+# str(es.m.df)
+
+es.df <- rbind(es.m.df,es.f.df)
+
+# order female first
+es.df[,1] <- factor(es.df[,1], levels=c("Female","Male"))
+# str(es.df)
+
+e.sum <- ddply(es.df,.(Sex, Sample, Fraction),
+	summarize,
+	ymin = quantile(Median,.1),
+	ymax = quantile(Median,.9),
+	middle = median(Median),
+	lower = quantile(Median,0.25),
+	upper = quantile(Median,0.75)
+)
+
+ggplot(data = e.sum, aes(x=Fraction)) + 
+	geom_boxplot(aes(fill=Sample
+	                 ,ymin = ymin
+	                 ,ymax = ymax
+	                 ,middle = middle
+	                 ,upper = upper
+	                 ,lower=lower),stat='identity',size=0.2) +
+  # geom_hline(yintercept=0) +
+  # scale_y_continuous(limits = c(0.0025,0.005)) +
+	# theme(legend.justification=c(1,0), legend.position=c(0.85,.84)) +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+	labs(y = "Median Error", x = "Sample Fraction") +
+	facet_wrap(~Sex,ncol=1,scale="free") +
+	labs(y="Error Interquartile Range")	
+ggsave("../figures/fig5b.pdf",width=6.5,height=6.5,units=c("in"))
+
+# clean up
+rm(list=c("e.sum","es.df","es.m.df","es.m","es.ns.m"
+          ,"es.s.m","es.f.df","es.f","es.ns.f","es.s.f"))
+```
+
+Plot right singular vectors versus child mortality, ${_5}q_0$.
+
+```{r plot-right-singular-vectors-by-child-mortality, eval = TRUE, echo = TRUE}
+# svds
+svd.m <- mod.1_0.m$svd$s1
+svd.f <- mod.1_0.f$svd$s1
+
+# right singular vectors
+vs.cm <- rbind(
+	cbind("Female","v1",svd.f$v[,1],Qlogit.f[1,]),	
+	cbind("Female","v2",svd.f$v[,2],Qlogit.f[1,]),	
+	cbind("Female","v3",svd.f$v[,3],Qlogit.f[1,]),	
+	cbind("Female","v4",svd.f$v[,4],Qlogit.f[1,]),
+	cbind("Male","v1",svd.m$v[,1],Qlogit.m[1,]),	
+	cbind("Male","v2",svd.m$v[,2],Qlogit.m[1,]),	
+	cbind("Male","v3",svd.m$v[,3],Qlogit.m[1,]),	
+	cbind("Male","v4",svd.m$v[,4],Qlogit.m[1,])
+)
+
+vs.cm.df <- data.frame(
+	Sex = as.character(vs.cm[,1]),
+	V = as.character(vs.cm[,2]),
+	Value = as.numeric(vs.cm[,3]),
+	CM = as.numeric(vs.cm[,4])
+)
+# str(vs.cm.df)
+
+# predicted right singular vectors
+vs.cm.p <- rbind(
+	cbind("Female","v1",predict(mod.1_0.f$mods$s1$v1),Qlogit.f[1,]),	
+	cbind("Female","v2",predict(mod.1_0.f$mods$s1$v2),Qlogit.f[1,]),	
+	cbind("Female","v3",predict(mod.1_0.f$mods$s1$v3),Qlogit.f[1,]),	
+	cbind("Female","v4",predict(mod.1_0.f$mods$s1$v4),Qlogit.f[1,]),
+	cbind("Male","v1",predict(mod.1_0.m$mods$s1$v1),Qlogit.m[1,]),	
+	cbind("Male","v2",predict(mod.1_0.m$mods$s1$v2),Qlogit.m[1,]),	
+	cbind("Male","v3",predict(mod.1_0.m$mods$s1$v3),Qlogit.m[1,]),	
+	cbind("Male","v4",predict(mod.1_0.m$mods$s1$v4),Qlogit.m[1,])
+)
+
+vs.cm.p.df <- data.frame(
+	Sex = as.character(vs.cm.p[,1]),
+	V = as.character(vs.cm.p[,2]),
+	Value = as.numeric(vs.cm.p[,3]),
+	CM = as.numeric(vs.cm.p[,4])
+)
+# str(vs.cm.p.df)
+
+v.names <- list(
+	'V#1' = expression('v'[1]),	
+	'V#2' = expression('v'[2]),
+	'V#3' = expression('v'[3]),
+	'V#4' = expression('v'[4])
+)
+
+v.labeller <- function(variable,value){
+  return(v.names[value])
+}
+
+vs.cm <- rbind(
+	cbind(vs.cm.df,Type="Data"),
+	cbind(vs.cm.p.df,Type="Predicted")
+)
+# str(vs.cm)
+
+# female
+ggplot(data = vs.cm[which(vs.cm[,1]=="Female"),]
+       , aes(x=CM, y=Value, group=Type, colour=Type)) + 
+	geom_point(size=0.2) + 
+	labs(y = "Right Singular Vector Element Values"
+	     , x = expression('Child Morality '[5]*'q'[0]*' (logit scale)')) +
+	# theme(legend.justification=c(1,0), legend.position=c(0.99,.88)) +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+	theme(legend.title=element_blank()) +
+	facet_wrap(~V, scale="free", labeller=v.labeller)
+ggsave("../figures/fig2-1f.pdf",width=6.5,height=6.5,units=c("in"))
+
+# male  
+ggplot(data = vs.cm[which(vs.cm[,1]=="Male"),]
+       , aes(x=CM, y=Value, group=Type, colour=Type)) + 
+	geom_point(size=0.2) + 
+	labs(y = "Right Singular Vector Elemeent Values"
+	     , x = expression('Child Morality '[5]*'q'[0]*' (logit scale)')) +
+	# theme(legend.justification=c(1,0), legend.position=c(0.99,.88)) +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+	theme(legend.title=element_blank()) +
+	facet_wrap(~V, scale="free", labeller=v.labeller)
+ggsave("../figures/fig2-1m.pdf",width=6.5,height=6.5,units=c("in"))
+
+# clean up
+rm(list=c("vs.cm","v.labeller","v.names"
+          ,"vs.cm.p.df","vs.cm.p","vs.cm.df","vs.cm","svd.m","svd.f"))
+```
+
+Plot adult mortality, ${_45}q_{15}$, by child mortality, ${_5}q_0$.
+
+```{r plot-adult-mortality-by-child-mortality, eval = TRUE, echo = TRUE}
+# data
+am.cm <- rbind(
+	cbind("Male",Qlogit.m[1,],Qlogit.m[2,]),
+	cbind("Female",Qlogit.f[1,],Qlogit.f[2,])
+)
+
+am.cm.df <- data.frame(
+	Sex = as.character(am.cm[,1]),
+	CM = as.numeric(am.cm[,2]),
+	AM = as.numeric(am.cm[,3])
+)
+# str(am.cm.df)
+
+# predicted
+am.cm.p <- rbind(
+	cbind("Male",Qlogit.m[1,],predict(mod.1_0.m$mods$s1$aml)),
+	cbind("Female",Qlogit.f[1,],predict(mod.1_0.f$mods$s1$aml))
+)
+
+am.cm.p.df <- data.frame(
+	Sex = as.character(am.cm.p[,1]),
+	CM = as.numeric(am.cm.p[,2]),
+	AM = as.numeric(am.cm.p[,3])
+)
+# str(am.cm.p.df)
+
+am.cm <- rbind(
+	cbind(am.cm.df,Type="Data"),
+	cbind(am.cm.p.df,Type="Predicted")
+)
+# str(am.cm)
+
+ggplot(data = am.cm, aes(x=CM, y=AM, group=Type, colour=Type)) + 
+	geom_point(size=0.2) +
+	labs(y = expression('Adult Morality '[45]*'q'[15]*' (logit scale)')
+	     , x = expression('Child Morality '[5]*'q'[0]*' (logit scale)')) +
+	# theme(legend.justification=c(1,0), legend.position=c(0.99,0.02)) +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+	theme(legend.title=element_blank()) +
+	facet_wrap(~Sex, scale="free")
+ggsave("../figures/fig2-2.pdf",width=6.5,height=6.5,units=c("in"))
+
+# clean up
+rm(list=c("am.cm","am.cm.p.df","am.cm.p","am.cm.df"))
+```
+
+Plot probability of dying in the first year of life, ${_1}q_0$, versus child mortality, ${_5}q_0$.
+
+```{r plot-q0-by-child-mortality, eval = TRUE, echo = TRUE}
+# data
+q0.cm.m <- data.frame(
+	Sex = as.character("Male"),
+	CM = as.numeric(Qlogit.m[1,]),
+	q0 = as.numeric(q1logit.m[1,])
+)
+# str(q0.cm.m)
+
+q0.cm.f <- data.frame(
+	Sex = as.character("Female"),
+	CM = as.numeric(Qlogit.f[1,]),
+	q0 = as.numeric(q1logit.f[1,])
+)
+# str(q0.cm.f)
+
+q0.cm.df <- rbind(q0.cm.m, q0.cm.f)
+
+# predicted
+q0.cm.m.p <- data.frame(
+	Sex = as.character("Male"),
+	CM = as.numeric(Qlogit.m[1,]),
+	q0 = as.numeric(predict(mod.1_0.m$mods$s1$q0))
+)
+# str(q0.cm.m.p)
+
+q0.cm.f.p <- data.frame(
+	Sex = as.character("Female"),
+	CM = as.numeric(Qlogit.f[1,]),
+	q0 = as.numeric(predict(mod.1_0.f$mods$s1$q0))
+)
+# str(q0.cm.f.p)
+
+q0.cm.p.df <- rbind(q0.cm.m.p, q0.cm.f.p)
+
+q0 <- rbind(
+	cbind(q0.cm.df,Type="Data"),
+	cbind(q0.cm.p.df,Type="Predicted")
+)
+
+# order female first
+q0[,1] <- factor(q0[,1], levels=c("Female","Male"))
+# str(q0)
+
+ggplot(data = q0, aes(x=CM, y=q0, group=Type, colour=Type)) + 
+	geom_point(size=0.2) +
+	labs(y = expression(''[1]*'q'[0]*' (logit scale)')
+	     , x = expression('Child Morality '[5]*'q'[0]*' (logit scale)')) +
+	# theme(legend.justification=c(1,0), legend.position=c(0.99,0.02)) +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+	theme(legend.title=element_blank()) +
+	facet_wrap(~Sex, scale="free") 
+ggsave("../figures/fig2-3.pdf",width=6.5,height=6.5,units=c("in"))
+
+# clean up
+rm(list=c("q0","q0.cm.p.df","q0.cm.f.p"
+          ,"q0.cm.m.p","q0.cm.df","q0.cm.f","q0.cm.m"))
+```
+
+Plot heuristic predictions or life tables at three levels of child mortality from very low to very high.
+
+```{r plot-heuristic-predicted, eval = TRUE, echo = TRUE}
+# some values for logit-scale 5q0
+cml.input <- c(-5.5,-3.2,-1.5)
+
+# predict life tables using the basic models we fit earlier
+lt.f <- ltPredict(mod.1_0.sm.f,smooth=TRUE,cml.input)
+# str(lt.f)
+lt.m <- ltPredict(mod.1_0.sm.m,smooth=TRUE,cml.input)
+# str(lt.m)
+
+lt.p <- rbind(
+	cbind("Female",as.numeric(rownames(lt.f)),cml.input[1],lt.f[,1]),
+	cbind("Female",as.numeric(rownames(lt.f)),cml.input[2],lt.f[,2]),
+	cbind("Female",as.numeric(rownames(lt.f)),cml.input[3],lt.f[,3]),
+	cbind("Male",as.numeric(rownames(lt.m)),cml.input[1],lt.m[,1]),
+	cbind("Male",as.numeric(rownames(lt.m)),cml.input[2],lt.m[,2]),
+	cbind("Male",as.numeric(rownames(lt.m)),cml.input[3],lt.m[,3])
+)
+
+lt.p.df <- data.frame(
+	Sex = as.character(lt.p[,1]),
+	Age = as.numeric(lt.p[,2]),
+	cml = as.character(lt.p[,3]),
+	ql = as.numeric(lt.p[,4])
+)
+# str(lt.p.df)
+
+ggplot(data = lt.p.df, aes(x=Age, y=ql
+                           , group=interaction(Sex,cml), colour=Sex, shape=cml)) +
+	geom_line() +
+  geom_point(data = lt.p.df[seq(1, nrow(lt.p.df), 5),],size=2) +
+  scale_x_continuous(breaks=c(seq(0,110,5))) +
+	labs(y = expression('Predicted '[1]*'q'[x]*' (logit scale)'), x = "Age (years)") +
+	# theme(legend.justification=c(1,0), legend.position=c(0.95,0.05)) + 
+  theme(legend.position="bottom", legend.box = "horizontal") +
+	scale_shape_discrete(name = expression('logit('[5]*'q'[0]*')'))
+ggsave("../figures/fig6.pdf",width=6.5,height=6.5,units=c("in"))
+
+# clean up
+rm(list=c("lt.p.df","lt.p","lt.m","lt.f","cml.input"))
+```
+
+
+# Make Tables
+
+Load the Stargazer and xtable packages for making nice LaTeX tables from regression output. The code uses **sink()** to redirect output to text files where either complete LaTeX tables are stored, or the rows of LaTeX tables are stored. The rows-only tables slot nicely into headers and footers that are nicely formatted in the manuscript, and the whole tables (Stargazer output) are completely ready to go and slot straight into the LaTeX. Running the R Markdown file to render a PDF *does not write the text files*. To do that you need to run this section intertively.
+
+Create table describing which HMD life tables are included in the analysis.
+
+```{r life-tables-used, eval = TRUE, echo = TRUE, warning=FALSE}
+# recall that the same life tables are used for females and males
+all.equal(colnames(q1.f),paste("fe",colnames(q1.m),sep=""))
+
+# data frame with the life table names with years
+allLifetables <- read.table(text = colnames(q1.f)
+                            , sep = ".", colClasses = "character")
+colnames(allLifetables) <- c("sex","country","year")
+allLifetables$year <- as.numeric(allLifetables$year)
+
+# summarize life tables
+country <- allLifetables[1,2]
+year <- allLifetables[1,3]
+ltList <- list()
+ltList[[1]] <- c(country,year,"")
+index <- 1
+for (i in 2:nrow(allLifetables)) {
+  if ((allLifetables[i,2] != country) | 
+      (allLifetables[i,3] != (allLifetables[(i-1),3]+1))) {
+    ltList[[index]][3] <- allLifetables[(i-1),3]
+    country <- allLifetables[i,2]
+    year <- allLifetables[i,3]
+    index <- index + 1
+    ltList[[(index)]] <- c(country,year,"")
+  }
+  if(i==nrow(allLifetables)) {
+    ltList[[index]][3] <- allLifetables[i,3]
+  }
+}
+# have a look at the list of life countries with their life tables
+# ltList
+
+# create LaTeX for life table summaries
+
+# function to parse out full country names from first line of
+#   HMD life table text file
+parse.countries <- function(file.name) {
+  
+  con <- file(file.name,"r")
+  first.line <- readLines(con,n=1)
+  close(con)
+  
+  return(str_split(first.line,",")[[1]][1])
+  
+}
+
+# read and split the list of file names from HMD
+files <- Sys.glob("../data/HMD/hmd_statistics/lt_female/fltper_5x1/*")
+# files
+
+# make a list of country abbreviations and their full names
+country.names <- list()
+for (i in 1:length(files)) {
+  country.names[[i]] <- c(strsplit(basename(files[i]),"\\.")[[1]][1],parse.countries(files[[i]]))
+}
+# have a look at the list of full country names
+# country.names
+
+# print life table summaries to local output
+ltGrandTot <- 0
+for (i in 1:length(ltList)) {
+  for(j in 1:length(country.names)) {
+    if(ltList[[i]][1] == str_to_upper(country.names[[j]][1])) {
+    ltTot <- as.numeric(ltList[[i]][3])-as.numeric(ltList[[i]][2])+1
+    ltGrandTot <- ltGrandTot + ltTot
+    cat(country.names[[j]][1],"&",country.names[[j]][2],"&",ltList[[i]][2]
+        ,"--",ltList[[i]][3],"&",ltTot," \\\\","\n")
+    }
+  }
+}
+
+# create a dataframe with the country names, abbreviations, and number of
+#   consecutive life tables 
+ltGrandTot <- 0
+life.tables <- data.frame(
+  "abbreviation" = character(length(ltList))
+  ,"country" = character(length(ltList))
+  ,"startYear" = numeric(length(ltList))
+  ,"stopYear" = numeric(length(ltList))
+  ,"tables" = numeric(length(ltList))
+  ,stringsAsFactors = FALSE
+)
+for (i in 1:length(ltList)) {
+  for(j in 1:length(country.names)) {
+    if(ltList[[i]][1] == str_to_upper(country.names[[j]][1])) {
+      ltTot <- as.numeric(ltList[[i]][3])-as.numeric(ltList[[i]][2])+1
+      ltGrandTot <- ltGrandTot + ltTot
+      life.tables$abbreviation[i] <- as.character(country.names[[j]][2])
+      life.tables$country[i] <- as.character(country.names[[j]][1])
+      life.tables$startYear[i] <- as.numeric(ltList[[i]][2])
+      life.tables$stopYear[i] <- as.numeric(ltList[[i]][3])
+      life.tables$tables[i] <- as.numeric(ltTot)
+    }
+  }
+}
+
+lts.print <- cbind(life.tables[,c(1,2)]
+                   ,paste(life.tables[,3],"--",life.tables[,4],sep="")
+                   ,life.tables[,5])
+
+# save rows of table summarizing life tables in a text file
+capture.output(file="../tables/LTSummaries.txt",
+print.xtable(xtable(lts.print,booktabs=TRUE,digits=0)
+             ,only.contents = TRUE,include.rownames = FALSE
+             ,include.colnames = FALSE,hline.after=NULL)
+)
+
+# save the number of life tables for each sex
+capture.output(file="../tables/LTtot.txt",cat(format(ltGrandTot, nsmall=0, big.mark=",")))
+
+# save the number of life tables for both sexes
+capture.output(file="../tables/LTtotBoth.txt",cat(format(2*ltGrandTot, nsmall=0, big.mark=",")))
+
+# save the download date
+capture.output(file="../tables/HMDdate.txt",cat(download.date))
+
+print("")
+print(paste("Total number of life tables in raw data (q1.f):"
+            ,length(colnames(q1.f))))
+print(paste("Check, totalling up country counts of life tables:",ltGrandTot))
+
+print("")
+print("Two hand corrections")
+print("GBRTENW: England and Wales - Total Population")
+print("GBRCENW: England and Wales - Civilian National Population")
+
+rm(list=c("country","year","files","i","j","index"))
+```
+
+Make lines that describe the sum of squares explained by each SVD component.
+
+```{r component-ss, eval=TRUE, echo=TRUE}
+# sum of squares explained by each component is the square of the 
+#   corresponding singular value
+
+# calculate the ss for females
+ss.1.f <- (mod.1_0.f$svd$s1$d^2)[1]/sum(mod.1_0.f$svd$s1$d^2)
+ss.2.f <- (mod.1_0.f$svd$s1$d^2)[2]/sum(mod.1_0.f$svd$s1$d^2)
+ss.3.f <- (mod.1_0.f$svd$s1$d^2)[3]/sum(mod.1_0.f$svd$s1$d^2)
+ss.4.f <- (mod.1_0.f$svd$s1$d^2)[4]/sum(mod.1_0.f$svd$s1$d^2)
+ss.1to4.f <- format(round(sum((mod.1_0.f$svd$s1$d^2)[1:4])
+                          /sum(mod.1_0.f$svd$s1$d^2),6),format="d")
+ss.f <- format(round(c(ss.1.f,ss.2.f,ss.3.f,ss.4.f),6),format="d")
+# write the line for males
+capture.output(file="../tables/ssFullFemale.txt",
+cat(paste(paste(ss.f[1:3],collapse=", "),sep=""),", and ",ss.f[4],sep="")
+)
+capture.output(file="../tables/ssFullFemaleTotal.txt",
+cat(ss.1to4.f)
+)
+
+# calculate the ss for males
+ss.1.m <- (mod.1_0.m$svd$s1$d^2)[1]/sum(mod.1_0.m$svd$s1$d^2)
+ss.2.m <- (mod.1_0.m$svd$s1$d^2)[2]/sum(mod.1_0.m$svd$s1$d^2)
+ss.3.m <- (mod.1_0.m$svd$s1$d^2)[3]/sum(mod.1_0.m$svd$s1$d^2)
+ss.4.m <- (mod.1_0.m$svd$s1$d^2)[4]/sum(mod.1_0.m$svd$s1$d^2)
+ss.1to4.m <- format(round(sum((mod.1_0.m$svd$s1$d^2)[1:4])
+                          /sum(mod.1_0.m$svd$s1$d^2),6),format="d")
+ss.m <- format(round(c(ss.1.m,ss.2.m,ss.3.m,ss.4.m),6),format="d")
+# write the line for males
+capture.output(file="../tables/ssFullMale.txt",
+cat(paste(paste(ss.m[1:3],collapse=", "),sep=""),", and ",ss.m[4],sep="")
+)
+capture.output(file="../tables/ssFullMaleTotal.txt",
+cat(ss.1to4.f)
+)
+
+# calculate fractions of 2+ component ss explained by 
+#   components 2-4
+
+# female
+ss.2plus.tot.f <- sum(mod.1_0.f$svd$s1$d[2:length(mod.1_0.f$svd$s1$d)]^2)
+ss.2plus.2.f <- (mod.1_0.f$svd$s1$d^2)[2]/ss.2plus.tot.f
+ss.2plus.3.f <- (mod.1_0.f$svd$s1$d^2)[3]/ss.2plus.tot.f
+ss.2plus.4.f <- (mod.1_0.f$svd$s1$d^2)[4]/ss.2plus.tot.f
+ss.2plus.f <- c(ss.2plus.2.f,ss.2plus.3.f,ss.2plus.4.f)
+ss.2plus.format.f <- format(round(ss.2plus.f,6),format="d")
+ss.2plus.tot.f <- format(round(sum(ss.2plus.f),6),format="d")
+capture.output(file="../tables/ssFemale.txt",
+cat(paste(paste(ss.2plus.format.f[1:2],collapse=", "),sep=""),", and ",ss.2plus.format.f[3],sep="")
+)
+capture.output(file="../tables/ssFemaleTotal.txt",
+cat(ss.2plus.tot.f)
+)
+# male
+ss.2plus.tot.m <- sum(mod.1_0.m$svd$s1$d[2:length(mod.1_0.m$svd$s1$d)]^2)
+ss.2plus.2.m <- (mod.1_0.m$svd$s1$d^2)[2]/ss.2plus.tot.m
+ss.2plus.3.m <- (mod.1_0.m$svd$s1$d^2)[3]/ss.2plus.tot.m
+ss.2plus.4.m <- (mod.1_0.m$svd$s1$d^2)[4]/ss.2plus.tot.m
+ss.2plus.m <- c(ss.2plus.2.m,ss.2plus.3.m,ss.2plus.4.m)
+ss.2plus.format.m <- format(round(ss.2plus.m,6),format="d")
+ss.2plus.tot.m <- format(round(sum(ss.2plus.m),6),format="d")
+# write the line for males
+capture.output(file="../tables/ssMale.txt",
+cat(paste(paste(ss.2plus.format.m[1:2],collapse=", "),sep=""),", and ",ss.2plus.format.m[3],sep="")
+)
+capture.output(file="../tables/ssMaleTotal.txt",
+cat(ss.2plus.tot.m)
+)
+```
+
+Make table of summary comparison results.
+
+```{r summary-comparison-table, eval = TRUE, echo = TRUE}
+# the summary comparisons are stored in comps. ... objects
+comps.child$female
+comps.child$male  
+cat("\n")
+comps.adult$female
+comps.adult$male
+
+# make lines for the table
+
+# female
+# make code more readable ...
+# a, c
+# b, d
+a.f <- comps.child$female[1,1] # child-only SVD-Comp
+b.f <- comps.child$female[2,1] # child-only Log-Quad
+c.f <- comps.adult$female[1,1] # child/adult SVD-Comp
+d.f <- comps.adult$female[2,1] # child/adult Log-Quad
+# write the few lines
+capture.output(file="../tables/compsFemale.txt",
+  cat(paste("R1 & SVD-Comp &", format(a.f,big.mark=",",digits=0), "&"
+    , format(c.f,big.mark=",",digits=0), "&"
+    , format(c.f - a.f, big.mark=",",digits=0)
+    , " \\\\", sep=" "),"\n"),
+  cat(paste("R2 & Log-Quad &", format(b.f,big.mark=",",digits=0), "&"
+    , format(d.f,big.mark=",",digits=0), "&"
+    , format(d.f - b.f, big.mark=",",digits=0)
+    , " \\\\", sep=" "),"\n"),
+  cat(paste("R3 & R2-R1 &", format(round(
+    b.f - a.f,0),nsmall=0), "&", format(round(d.f - c.f,0),nsmall=0), "&"
+    , format(round((d.f - b.f) - (c.f - a.f),0),nsmall=0)
+    , " \\\\", sep=" "),"\n"),
+  cat(paste("R4 & R3/R1 (\\%) &", format(round(100*
+    (b.f - a.f)/a.f,1),nsmall=1), "&"
+    , format(round(100*(d.f - c.f)/ c.f,1),nsmall=1), "&"
+    , format(round(100*((d.f - b.f) - (c.f - a.f)) / (c.f - a.f),1),nsmall=1)
+    , " \\\\", sep=" "),"\n")
+)
+
+# male
+# make code more readable ...
+# a, c
+# b, d
+a.m <- comps.child$male[1,1] # child-only SVD-Comp
+b.m <- comps.child$male[2,1] # child-only Log-Quad
+c.m <- comps.adult$male[1,1] # child/adult SVD-Comp
+d.m <- comps.adult$male[2,1] # child/adult Log-Quad
+# write the few lines
+capture.output(file="../tables/compsMale.txt",
+  cat(paste("R1 & SVD-Comp &", format(a.m,big.mark=",",digits=0), "&"
+    , format(c.m,big.mark=",",digits=0), "&"
+    , format(c.m - a.m, big.mark=",",digits=0)
+    , " \\\\", sep=" "),"\n"),
+  cat(paste("R2 & Log-Quad &", format(b.m,big.mark=",",digits=0), "&"
+    , format(d.m,big.mark=",",digits=0), "&"
+    , format(d.m - b.m, big.mark=",",digits=0)
+    , " \\\\", sep=" "),"\n"),
+  cat(paste("R3 & R2-R1 &", format(round(
+    b.m - a.m,0),nsmall=0), "&", format(round(d.m - c.m,0),nsmall=0), "&"
+    , format(round((d.m - b.m) - (c.m - a.m),0),nsmall=0)
+    , " \\\\", sep=" "),"\n"),
+  cat(paste("R4 & R3/R1 (\\%) &", format(round(100*
+    (b.m - a.m)/a.m,1),nsmall=1), "&"
+    , format(round(100*(d.m - c.m)/ c.m,1),nsmall=1), "&"
+    , format(round(100*((d.m - b.m) - (c.m - a.m)) / (c.m - a.m),1),nsmall=1)
+    , " \\\\", sep=" "),"\n")
+)
+```
+
+Make nice LaTeX tables from the regression models that are part of SVD-Comp. Don't worry about the warnings *Stargazer* raises. 
+
+```{r tables-of-regression-models, eval = TRUE, echo = TRUE, warning=FALSE}
+# adult mortality model
+capture.output(file="../tables/adultMortality.txt",
+stargazer(
+	mod.1_0.f$mods$s1$aml,
+	mod.1_0.m$mods$s1$aml,
+	title="Adult Mortality Models: $\\logit(\\qff)_{z \\ell} = f(\\qf_{\\, z \\ell})$",
+	label="tab:appA:adultMxMod",
+	dep.var.labels.include = FALSE,
+	dep.var.caption = "$\\logit(\\qff)$",
+	model.numbers = FALSE,
+	column.labels=c("Female","Male"),
+	covariate.labels=c("$\\qf$","$\\mbox{logit}(\\qf)$"
+	                   ,"$\\mbox{logit}(\\qf)^2$","$\\mbox{logit}(\\qf)^3$"),
+	omit.stat=c("LL","ser"),
+	single.row = TRUE
+))
+
+# infant mortality
+capture.output(file="../tables/infantMortality.txt",
+stargazer(
+	mod.1_0.f$mods$s1$q0,
+	mod.1_0.m$mods$s1$q0,
+	title="Infant Mortality Models: $\\logit(\\qoz)_{z \\ell} = f(\\qf_{\\, z \\ell})$",
+	label="tab:appA:infantMxMod",
+	dep.var.labels.include = FALSE,
+	dep.var.caption = "$\\logit(\\qoz)$",
+	model.numbers = FALSE,
+	column.labels=c("Female","Male"),
+	covariate.labels=c("$\\mbox{logit}(\\qf)$","$\\mbox{logit}(\\qf)^2$"),
+	omit.stat=c("LL","ser"),
+	single.row = TRUE
+))
+
+# vs - female
+capture.output(file="../tables/vsFemale.txt",
+stargazer(
+	mod.1_0.f$mods$s1$v1,
+	mod.1_0.f$mods$s1$v2,
+	mod.1_0.f$mods$s1$v3,
+	mod.1_0.f$mods$s1$v4,
+	title="Female RSV Models: $v_{\\ell i} = f_{i}(\\qf_{\\, \\ell},\\qff_{\\, \\ell})$",
+	label="tab:appA:femaleRSVMods",
+	dep.var.labels.include = FALSE,
+	dep.var.caption = "Right Singular Vector Elements",
+	model.numbers = FALSE,
+	column.labels = c("$\\mbf{v}_1$","$\\mbf{v}_2$"
+	                 ,"$\\mbf{v}_3$","$\\mbf{v}_4$"),
+	covariate.labels=c(
+		"$\\qf$",
+		"$\\mbox{logit}(\\qf)$",
+		"$\\mbox{logit}(\\qf)^2$",
+		"$\\mbox{logit}(\\qf)^3$",
+		"$\\qff$",
+		"$\\mbox{logit}(\\qff)^2$",
+		"$\\mbox{logit}(\\qff)^3$",
+		"$\\qf \\times \\qff$"	
+	),
+	omit.stat=c("LL","ser")
+))
+
+# vs - male
+capture.output(file="../tables/vsMale.txt",
+stargazer(
+	mod.1_0.m$mods$s1$v1,
+	mod.1_0.m$mods$s1$v2,
+	mod.1_0.m$mods$s1$v3,
+	mod.1_0.m$mods$s1$v4,
+	title="Male RSV Models: $v_{\\ell i} = f_{i}(\\qf_{\\, \\ell},\\qff_{\\, \\ell})$",
+	label="tab:appA:maleRSVMods",
+	dep.var.labels.include = FALSE,
+	dep.var.caption = "Right Singular Vector Elements",
+	model.numbers = FALSE,
+	column.labels = c("$\\mbf{v}_1$","$\\mbf{v}_2$"
+	                 ,"$\\mbf{v}_3$","$\\mbf{v}_4$"),
+	covariate.labels=c(
+		"$\\qf$",
+		"$\\mbox{logit}(\\qf)$",
+		"$\\mbox{logit}(\\qf)^2$",
+		"$\\mbox{logit}(\\qf)^3$",
+		"$\\qff$",
+		"$\\mbox{logit}(\\qff)^2$",
+		"$\\mbox{logit}(\\qff)^3$",
+		"$\\qf \\times \\qff$"	
+	),
+	omit.stat=c("LL","ser")
+))
+```
+
+Create lines for age-specific error tables. These compare the $l_x$-weighted age-specific total absolute error (tae) in prediction between SVD-Comp and Log Quad. The coding strategy is to write a couple functions to automate this set of calculations so that it can be repeated several times later using different numbers of components in the SVD-Comp predictions. The first function *lthat()* creates full life tables from the SVD-Comp predictions -- so that we can get age-specific expectations of life, $e_x$. The second function *ageSpecificErrorComparisons()* used the first and actually calculates the age-weighted prediction errors and their differences and organizes them into a nice return object. 
+
+```{r age-specific-error-comparisons, eval = TRUE, echo = TRUE}
+# function to calculate life table from matrix of 1qx
+lthat <- function(q,sex,a1.f,a1.m) {
+  # calculate lx
+  zeroes <- matrix(0,nrow=(nrow(q)+1),ncol=ncol(q))
+  l <- zeroes
+  l[1,] <- 100000 # l0 = 100000
+  # loop through ages and calculate lx
+  for (i in 2:nrow(l)) {
+    l[i,] <- l[(i-1),]*(1-q[(i-1),])
+  }
+  # calculate Lx
+  L <- zeroes
+  # loop through ages and calculate Lx
+  for (i in 1:(nrow(l)-1)) {
+    L[i,] <- l[(i+1),] + ifelse(str_to_lower(sex)=="female"
+                                ,a1.f[i,],a1.m[i,]) * (l[i,]-l[(i+1),])  
+  }
+  L[nrow(L),] <- ifelse(str_to_lower(sex)=="female"
+                        ,a1.f[nrow(L),],a1.m[nrow(L),]) * l[nrow(L),]
+  # calculate Tx
+  T <- zeroes
+  for (i in 1:(nrow(l)-1)) {
+    T[i,] <- colSums(L[(i:nrow(T)),])
+  }
+  T[nrow(T),] <- L[nrow(T),]
+  # calculate ex
+  e <- T/l
+  lt <- list(qx=q,lx=l,Lx=L,Tx=T,ex=e)
+  return(lt)
+}
+
+# function to conduct age-specific comparisons 
+#   of prediction errors between SVD-Comp and Log Quad
+ageSpecificErrorComparisons <- function(mod.f,mod.m,lt.lq,q,l,e,a1.f,a1.m) {
+  
+  # mod.f is svdMod() return object for females
+  # mod.m is svdMod() return object for males
+  # lt.q is object with q, e, l columns 
+  #   from Log Quad predicions, five-year age groups
+  # q is input HMD life table 5qx columns
+  # l is input HMD life table lx columns, five-year age groups
+  # e is input HMD life table e columns, five-year age groups
+  
+  # create five-year age groups of predicted values
+  # female
+  
+  # female
+  qp.f <- expit(mod.f$recon.samp$s1)
+  q5p.f <- convert1qxTo5qxApply(qp.f)
+  # male
+  qp.m <- expit(mod.m$recon.samp$s1)
+  q5p.m <- convert1qxTo5qxApply(qp.m)
+
+    # predicted life tables at five-year age group start ages
+  # female
+  lt.comp.f <- lthat(qp.f,"Female",a1.f,a1.m) # female life tables
+  lt.comp.f.qx <- q5p.f
+  lt.comp.f.lx <- lt.comp.f$lx[c(1,2,seq(6,111,5)),]
+  lt.comp.f.ex <- lt.comp.f$ex[c(1,2,seq(6,111,5)),]
+  # male
+  lt.comp.m <- lthat(qp.m,"Male",a1.f,a1.m) # male life tables
+  lt.comp.m.qx <- q5p.m
+  lt.comp.m.lx <- lt.comp.m$lx[c(1,2,seq(6,111,5)),]
+  lt.comp.m.ex <- lt.comp.m$ex[c(1,2,seq(6,111,5)),]
+  
+  # log quad predicted life tables
+  # female
+  lt.lq.f.qx <- lt.lq$q5.lq.f 
+  lt.lq.f.lx <- lt.lq$l5.lq.f
+  lt.lq.f.ex <- lt.lq$e5.lq.f
+  # male
+  lt.lq.m.qx <- lt.lq$q5.lq.m
+  lt.lq.m.lx <- lt.lq$l5.lq.m
+  lt.lq.m.ex <- lt.lq$e5.lq.m
+  
+  # age-schedule of weights based on HMD lx values 
+  # female
+  weights.f <- rowSums(l$l5.f)/sum(rowSums(l$l5.f))
+  # sum(weight.f)
+  # male
+  weights.m <- rowSums(l$l5.m)/sum(rowSums(l$l5.m))
+  # sum(weight.m)
+  
+  # sum age-specific absolute errors in 5qx
+
+  # female
+  tae.comp.q.f <- rowSums(abs(lt.comp.f.qx-q$q5.f)) * weights.f[1:23]
+  tae.lq.q.f <- rowSums(abs(lt.lq.f.qx-q$q5.f)) * weights.f[1:23]
+  tae.diff.q.f <- tae.comp.q.f-tae.lq.q.f
+  # male
+  tae.comp.q.m <- rowSums(abs(lt.comp.m.qx-q$q5.m)) * weights.m[1:23]
+  tae.lq.q.m <- rowSums(abs(lt.lq.m.qx-q$q5.m)) * weights.m[1:23]
+  tae.diff.q.m <- tae.comp.q.m-tae.lq.q.m
+  
+  # store it all
+  tae.q <- cbind(tae.comp.q.f,tae.lq.q.f
+                 ,tae.diff.q.f,tae.comp.q.m,tae.lq.q.m,tae.diff.q.m)
+  tae.q <- rbind(tae.q,colSums(tae.q))
+  
+  # sum age-specific absolute errors in ex
+  
+  # female
+  tae.comp.e.f <- rowSums(abs(lt.comp.f.ex-e$e5.f)) * weights.f
+  tae.lq.e.f <- rowSums(abs(lt.lq.f.ex-e$e5.f)) * weights.f
+  tae.diff.e.f <- tae.comp.e.f-tae.lq.e.f
+  # male
+  tae.comp.e.m <- rowSums(abs(lt.comp.m.ex-e$e5.m)) * weights.m
+  tae.lq.e.m <- rowSums(abs(lt.lq.m.ex-e$e5.m)) * weights.m
+  tae.diff.e.m <- tae.comp.e.m-tae.lq.e.m
+  
+  # store it all
+  tae.e <- cbind(tae.comp.e.f,tae.lq.e.f
+                 ,tae.diff.e.f,tae.comp.e.m,tae.lq.e.m,tae.diff.e.m)
+  tae.e <- rbind(tae.e,colSums(tae.e))
+  
+  # total absolute error in e0
+  # female
+  tot.tae.comp.e0.f <- sum(abs(lt.comp.f.ex[1,]-e$e5.f[1,]))
+  tot.tae.lq.e0.f <- sum(abs(lt.lq.f.ex[1,]-e$e5.f[1,]))
+  tot.tae.diff.e0.f <- tot.tae.comp.e0.f-tot.tae.lq.e0.f
+  # male
+  tot.tae.comp.e0.m <- sum(abs(lt.comp.m.ex[1,]-e$e5.m[1,]))
+  tot.tae.lq.e0.m <- sum(abs(lt.lq.m.ex[1,]-e$e5.m[1,]))
+  tot.tae.diff.e0.m <- tot.tae.comp.e0.m-tot.tae.lq.e0.m
+  
+  # have a look at it all
+  tot.tae.e0 <- rbind(c(tot.tae.comp.e0.f
+                        ,tot.tae.lq.e0.f,tot.tae.diff.e0.f)
+                      ,c(tot.tae.comp.e0.m,tot.tae.lq.e0.m
+                         ,tot.tae.diff.e0.m))
+  rownames(tot.tae.e0) <- c("Female","Male")
+  
+  return(list(
+    tae.q = tae.q
+    ,tae.e = tae.e
+    ,tot.tae.e0 = tot.tae.e0
+  ))
+ 
+}
+  
+# create list of five-year age group q, e, and l columns 
+#  from Log Quad predictions conducted earlier
+lt.lq <- list(
+   q5.lq.f = comps.child$q5.lq.f
+	,e5.lq.f = comps.child$e5.lq.f
+	,l5.lq.f = comps.child$l5.lq.f
+  ,q5.lq.m = comps.child$q5.lq.m
+	,e5.lq.m = comps.child$e5.lq.m
+	,l5.lq.m = comps.child$l5.lq.m	
+)
+
+# create list of 5qx (five-year age groups) from HMD life tables
+q <- list(
+   q5.f = q5.f 
+  ,q5.m = q5.m
+)
+
+# create list of lx (five-year age groups) from HMD life tables
+l <- list(
+   l5.f = l5.f
+  ,l5.m = l5.m
+)
+
+# create list of ex (five-year age groups) from HMD life tables
+e <- list(
+   e5.f = e5.f
+  ,e5.m = e5.m
+)
+  
+# calculate age-specific comparisons in prediction errors
+age.comps <- ageSpecificErrorComparisons(
+  mod.1_0.f,mod.1_0.m,lt.lq,q,l,e,a1.f,a1.m)
+# have a look
+age.comps
+
+# create lines for tables
+capture.output(file="../tables/ageCompQ-1.txt",
+print.xtable(xtable(
+  age.comps$tae.q[(1:nrow(age.comps$tae.q)-1),],booktabs=TRUE,digits=4)
+  ,only.contents = TRUE,include.rownames = TRUE
+  ,include.colnames = FALSE,hline.after=NULL
+  ,format.args=list(big.mark = ","))
+)
+capture.output(file="../tables/ageCompQ-2.txt",
+cat(paste("0-109 & ",paste(format(round(age.comps$tae.q[nrow(age.comps$tae.q),],4)
+                                  ,format="d",big.mark=","),collapse=" & ")," \\\\",sep=""))
+)
+
+capture.output(file="../tables/ageCompE-1.txt",
+print.xtable(xtable(
+  age.comps$tae.e[(1:nrow(age.comps$tae.e)-1),],booktabs=TRUE,digits=2)
+  ,only.contents = TRUE,include.rownames = TRUE
+  ,include.colnames = FALSE,hline.after=NULL
+  ,format.args=list(big.mark = ","))
+)
+capture.output(file="../tables/ageCompE-2.txt",
+cat(paste("0+ & ",paste(format(round(age.comps$tae.e[nrow(age.comps$tae.e),],2)
+                               ,format="d",big.mark=","),collapse=" & ")," \\\\",sep=""))
+)
+
+capture.output(file="../tables/ageCompTot.txt",
+print.xtable(xtable(age.comps$tot.tae.e0,booktabs=TRUE,digits=2)
+             ,only.contents = TRUE,include.rownames = TRUE
+             ,include.colnames = FALSE,hline.after=NULL
+             ,format.args=list(big.mark = ","))
+)
+```
+
+Create lines for tables with scaled component values.
+
+```{r table-of-components, eval = TRUE, echo = TRUE}
+# calculate the scaled components
+su.f <- mod.1_0.f$svd$s1$u %*% diag(mod.1_0.f$svd$s1$d) 
+su.m <- mod.1_0.m$svd$s1$u %*% diag(mod.1_0.m$svd$s1$d) 
+# first 4 components of both
+su <- cbind(seq(0,109,1),su.f[,1:4],su.m[,1:4])
+# make the table rows
+capture.output(file="../tables/us.txt",
+print.xtable(xtable(su,booktabs=TRUE,digits=c(0,0,2,2,2,2,2,2,2,2))
+             ,only.contents = TRUE,include.rownames = FALSE
+             ,include.colnames = FALSE,hline.after=NULL)
+)
+```
+
+Conduct age-specific error comparison using 1--4 components. To do this, rerun the models with *svdMod()* asking for 1--4 components, and then recalculate the error comparisons for each of those models. These results are for discussion in text only, no tables produced.
+
+```{r age-specific-error-comparisons-various-components, eval = TRUE, echo = TRUE}
+# 1 component
+# re-run models with 1 component
+adult.1 <- FALSE
+smooth.1 <- FALSE
+N.1 <- 1
+S.1 <- 1
+C.1 <- 1
+# base model
+mod.1_0.m.1 <- svdMod(q1logit.m,Qlogit.m,N.1,S.1,10,TRUE,adult.1,TRUE,smooth.1,C.1)
+mod.1_0.f.1 <- svdMod(q1logit.f,Qlogit.f,N.1,S.1,10,TRUE,adult.1,TRUE,smooth.1,C.1)
+
+# calculate age-specific comparisons in prediction errors
+# use the lt.q,q,l, and e from above
+age.comps.1 <- ageSpecificErrorComparisons(mod.1_0.f.1,mod.1_0.m.1,lt.lq,q,l,e,a1.f,a1.m)
+# have a look
+cat("\n\n")
+age.comps.1
+
+# create a table with results for 1 components
+capture.output(file="../tables/ageCompTotC-1.txt",
+print.xtable(xtable(age.comps.1$tot.tae.e0,booktabs=TRUE,digits=2)
+             ,only.contents = TRUE,include.rownames = TRUE
+             ,include.colnames = FALSE,hline.after=NULL
+             ,format.args=list(big.mark = ","))
+)
+
+# 2 components
+# re-run models with 1 component
+adult.2 <- FALSE
+smooth.2 <- FALSE
+N.2 <- 1
+S.2 <- 1
+C.2 <- 2
+# base model
+mod.1_0.m.2 <- svdMod(q1logit.m,Qlogit.m,N.2,S.2,10,TRUE,adult.2,TRUE,smooth.2,C.2)
+mod.1_0.f.2 <- svdMod(q1logit.f,Qlogit.f,N.2,S.2,10,TRUE,adult.2,TRUE,smooth.2,C.2)
+
+# calculate age-specific comparisons in prediction errors
+# use the lt.q,q,l, and e from above
+age.comps.2 <- ageSpecificErrorComparisons(mod.1_0.f.2,mod.1_0.m.2,lt.lq,q,l,e,a1.f,a1.m)
+# have a look
+cat("\n\n")
+age.comps.2
+
+# create a table with results for 2 components
+capture.output(file="../tables/ageCompTotC-2.txt",
+print.xtable(xtable(age.comps.2$tot.tae.e0,booktabs=TRUE,digits=2)
+             ,only.contents = TRUE,include.rownames = TRUE
+             ,include.colnames = FALSE,hline.after=NULL
+             ,format.args=list(big.mark = ","))
+)
+
+# 3 components
+# re-run models with 1 component
+adult.3 <- FALSE
+smooth.3 <- FALSE
+N.3 <- 1
+S.3 <- 1
+C.3 <- 3
+# base model
+mod.1_0.m.3 <- svdMod(q1logit.m,Qlogit.m,N.3,S.3,10,TRUE,adult.3,TRUE,smooth.3,C.3)
+mod.1_0.f.3 <- svdMod(q1logit.f,Qlogit.f,N.3,S.3,10,TRUE,adult.3,TRUE,smooth.3,C.3)
+
+# calculate age-specific comparisons in prediction errors
+# use the lt.q,q,l, and e from above
+age.comps.3 <- ageSpecificErrorComparisons(mod.1_0.f.3,mod.1_0.m.3,lt.lq,q,l,e,a1.f,a1.m)
+# have a look
+cat("\n\n")
+age.comps.3
+
+# create a table with results for 3 components
+capture.output(file="../tables/ageCompTotC-3.txt",
+print.xtable(xtable(age.comps.3$tot.tae.e0,booktabs=TRUE,digits=2)
+             ,only.contents = TRUE,include.rownames = TRUE
+             ,include.colnames = FALSE,hline.after=NULL
+             ,format.args=list(big.mark = ","))
+)
+
+# 4 components
+# re-run models with 1 component
+adult.4 <- FALSE
+smooth.4 <- FALSE
+N.4 <- 1
+S.4 <- 1
+C.4 <- 4
+# base model
+mod.1_0.m.4 <- svdMod(q1logit.m,Qlogit.m,N.4,S.4,10,TRUE,adult.4,TRUE,smooth.4,C.4)
+mod.1_0.f.4 <- svdMod(q1logit.f,Qlogit.f,N.4,S.4,10,TRUE,adult.4,TRUE,smooth.4,C.4)
+
+# calculate age-specific comparisons in prediction errors
+# use the lt.q,q,l, and e from above
+age.comps.4 <- ageSpecificErrorComparisons(mod.1_0.f.4,mod.1_0.m.4,lt.lq,q,l,e,a1.f,a1.m)
+# have a look
+cat("\n\n")
+age.comps.4
+
+# create lines for table with e0 total errors for log-quad and
+#   SVD-Comp with components 1-4
+# start with log-quad
+capture.output(file="../tables/ageCompLQ.txt",
+cat(paste("Log-Quad & ",paste(format(round(age.comps.1$tot.tae.e0[,2],0)
+             ,big.mark = ",",nsmall=0,trim=TRUE),collapse=" & "
+             ,sep=""))," \\\\")
+)
+# SVD-Comp components 1-4
+capture.output(file="../tables/ageCompSVD-Comp.txt",
+cat(paste("SVD-Comp, C=1 & ",paste(format(round(age.comps.1$tot.tae.e0[,1],0)
+             ,big.mark = ",",nsmall=0,trim=TRUE),collapse=" & "
+             ,sep="")),"\\\\\n",
+paste("SVD-Comp, C=2 & ",paste(format(round(age.comps.2$tot.tae.e0[,1],0)
+             ,big.mark = ",",nsmall=0,trim=TRUE),collapse=" & "
+             ,sep="")),"\\\\\n",
+paste("SVD-Comp, C=3 & ",paste(format(round(age.comps.3$tot.tae.e0[,1],0)
+             ,big.mark = ",",nsmall=0,trim=TRUE),collapse=" & "
+             ,sep="")),"\\\\\n",
+paste("SVD-Comp, C=4 & ",paste(format(round(age.comps.4$tot.tae.e0[,1],0)
+             ,big.mark = ",",nsmall=0,trim=TRUE),collapse=" & "
+             ,sep="")),"\\\\")
+)
+# differences between SVD-Comp components 1-4 and log-quad
+capture.output(file="../tables/ageCompSVD-CompLogQuadDiffs.txt",
+cat(paste("SVD-Comp, C=1 - Log-Quad & ",paste(format(round(age.comps.1$tot.tae.e0[,1]
+                             -age.comps.1$tot.tae.e0[,2],0)
+             ,big.mark = ",",nsmall=0,trim=TRUE),collapse=" & "
+             ,sep="")),"\\\\\n",
+paste("SVD-Comp, C=2 - Log-Quad & ",paste(format(round(age.comps.2$tot.tae.e0[,1]
+                         -age.comps.1$tot.tae.e0[,2],0)
+             ,big.mark = ",",nsmall=0,trim=TRUE),collapse=" & "
+             ,sep="")),"\\\\\n",
+paste("SVD-Comp, C=3 - Log-Quad & ",paste(format(round(age.comps.3$tot.tae.e0[,1]
+                         -age.comps.1$tot.tae.e0[,2],0)
+             ,big.mark = ",",nsmall=0,trim=TRUE),collapse=" & "
+             ,sep="")),"\\\\\n",
+paste("SVD-Comp, C=4 - Log-Quad & ",paste(format(round(age.comps.4$tot.tae.e0[,1]
+                         -age.comps.1$tot.tae.e0[,2],0)
+             ,big.mark = ",",nsmall=0,trim=TRUE),collapse=" & "
+             ,sep="")),"\\\\")
+)
+```
+
+# Test on Other Countries
+
+SVD-Comp is tested on two different countries that are not part of the HMD and are not developed countries but for which reasonable data exist: Mexico and South Africa. Example life tables for Mexico (1983--1985) from the Human Life Table Database (www.lifetable.de) [[https://www.lifetable.de/data/hld.zip](https://www.lifetable.de/data/hld.zip)] and South Africa (2005) come from the WHO's Global Health Observatory [[http://apps.who.int/gho/data/?theme=main&vid=61540](http://apps.who.int/gho/data/?theme=main&vid=61540)]. The life tables are converted to standard five-year age groups ending at ages 80-84, the oldest second-to-last age group that is common accross both examples. Predictions are made with both SVD-Comp and Log Quad using both child and adult mortality as predictors, and both the data and those predictions are plotted.
+
+```{r test-other-countries, eval = TRUE, echo = TRUE}
+# Mexico
+# read 1983-1985 Mexican life tables from Human Life Table Database
+mex <- read.csv("../data/non-HMD life tables/Mexico1983-1985.csv",header=TRUE)
+# female
+mex.f.q <- mex[,15][97:191]
+mex.f.q <- standardFiveYear(mex.f.q)[1:18]
+# male
+mex.m.q <- mex[,15][1:95]
+mex.m.q <- standardFiveYear(mex.m.q)[1:18]
+
+# South Africa
+# read 2005 life tables for South Africa from the WHO Global Health Observatory
+rsa <- read.csv("../data/non-HMD life tables/SouthAfrica2005.csv", header=TRUE)
+# female
+rsa.f.q <- rsa[,3][1:18]
+# male
+rsa.m.q <- rsa[,2][1:18]
+
+# Now have standard 5qx through ages 80-84, i.e. not including 1.0 at age 85
+
+# logits
+mex.f.ql <- logit(mex.f.q)
+mex.m.ql <- logit(mex.m.q)
+rsa.f.ql <- logit(rsa.f.q)
+rsa.m.ql <- logit(rsa.m.q)
+
+# child and adult Mx
+
+# Mexico
+# female
+mex.f.Q <- rep(0,2)
+# child mx
+mex.f.Q[1] <- childQ5(mex.f.q)
+# adult mx
+mex.f.Q[2] <- adultQ5(mex.f.q)
+# mmale
+mex.m.Q <- rep(0,2)
+# child mx
+mex.m.Q[1] <- childQ5(mex.m.q)
+# adult mx
+mex.m.Q[2] <- adultQ5(mex.m.q)
+
+# RSA
+# female
+rsa.f.Q <- rep(0,2)
+# child mx
+rsa.f.Q[1] <- childQ5(rsa.f.q)
+# adult mx
+rsa.f.Q[2] <- adultQ5(rsa.f.q)
+# mmale
+rsa.m.Q <- rep(0,2)
+# child mx
+rsa.m.Q[1] <- childQ5(rsa.m.q)
+# adult mx
+rsa.m.Q[2] <- adultQ5(rsa.m.q)
+
+# have a look
+mex.f.Q
+mex.m.Q
+rsa.f.Q
+rsa.m.Q
+
+# Predictions
+
+# models
+adult <- TRUE
+smooth <- TRUE
+N <- 1
+S <- 1
+C <- 4
+mod.1_0.sm.m <- svdMod(q1logit.m,Qlogit.m,N,S,10,TRUE,adult,TRUE,TRUE,C)
+mod.1_0.sm.f <- svdMod(q1logit.f,Qlogit.f,N,S,10,TRUE,adult,TRUE,TRUE,C)
+
+### predictions with child and adult
+
+### Mexico
+# female
+mex.f.p.ca <- ltPredict(mod.1_0.sm.f,TRUE,logit(mex.f.Q[1]),logit(mex.f.Q[2]))
+mex.f.p5.ca <- standardFiveYear(expit(mex.f.p.ca[,1]))
+# male
+mex.m.p.ca <- ltPredict(mod.1_0.sm.m,TRUE,logit(mex.m.Q[1]),logit(mex.m.Q[2]))
+mex.m.p5.ca <- standardFiveYear(expit(mex.m.p.ca[,1]))
+
+## RSA
+# female
+rsa.f.p.ca <- ltPredict(mod.1_0.sm.f,TRUE,logit(rsa.f.Q[1]),logit(rsa.f.Q[2]))
+rsa.f.p5.ca <- standardFiveYear(expit(rsa.f.p.ca[,1]))
+# male
+rsa.m.p.ca <- ltPredict(mod.1_0.sm.m,TRUE,logit(rsa.m.Q[1]),logit(rsa.m.Q[2]))
+rsa.m.p5.ca <- standardFiveYear(expit(rsa.m.p.ca[,1]))
+
+# predictions with Log-Quad
+
+# Source functions file
+source("../R/logQuad/DataProgramsExamples/R/functions.R")
+
+# Create labels for age vectors
+ages.5x1 <- c("0","1-4",paste(seq(5,105,5),seq(9,109,5),sep="-"),"110+")
+sexes <- c("Female","Male","Total")
+
+# Import matrix of model coefficients
+tmp1 <- read.csv("../R/logQuad/DataProgramsExamples/Data/coefs.logquad.HMD719.csv")
+tmp2 <- array(c(as.matrix(tmp1[, 3:6]))
+              , dim=c(24, 3, 4)
+              , dimnames=list(ages.5x1, sexes, c("ax", "bx", "cx", "vx")))
+coefs <- aperm(tmp2, c(1,3,2))
+
+### Mexico
+# female
+mex.f.LQp.ca <- lthat.any2.logquad(
+  coefs,"Female",Q5=mex.f.Q[1],QQa=mex.f.Q[2])$lt[1:23,2] # with adult
+# male 
+mex.m.LQp.ca <- lthat.any2.logquad(
+  coefs,"Male",Q5=mex.m.Q[1],QQa=mex.m.Q[2])$lt[1:23,2] # with adult
+
+### RSA
+# female
+rsa.f.LQp.ca <- lthat.any2.logquad(
+  coefs,"Female",Q5=rsa.f.Q[1],QQa=rsa.f.Q[2])$lt[1:23,2] # with adult
+# male
+rsa.m.LQp.ca <- lthat.any2.logquad(
+  coefs,"Male",Q5=rsa.m.Q[1],QQa=rsa.m.Q[2])$lt[1:23,2] # with adult
+
+### Plots, logit scale
+
+### Mexico
+# female child and adult only
+plot(mex.f.ql)
+points(logit(mex.f.p5.ca),type="l",col="blue")
+points(logit(mex.f.LQp.ca),type="l")
+# male child and adult only
+plot(mex.m.ql)
+points(logit(mex.m.p5.ca),type="l",col="blue")
+points(logit(mex.m.LQp.ca),type="l")
+
+### RSA
+# female child and adult only
+plot(rsa.f.ql)
+points(logit(rsa.f.p5.ca),type="l",col="blue")
+points(logit(rsa.f.LQp.ca),type="l")
+# male child and adult only
+plot(rsa.m.ql)
+points(logit(rsa.m.p5.ca),type="l",col="blue")
+points(logit(rsa.m.LQp.ca),type="l")
+
+### ggplot
+
+# data
+
+ages <- ages.5x1[1:18]
+# data only
+q.logit.data <- data.frame(rbind(
+  cbind(c(0,1,seq(5,80,5))
+        ,mex.f.ql,"Mexico","Female","Data")
+  ,cbind(c(0,1,seq(5,80,5))
+         ,mex.m.ql,"Mexico","Male","Data")
+  ,cbind(c(0,1,seq(5,80,5))
+         ,rsa.f.ql,"South Africa","Female","Data")
+  ,cbind(c(0,1,seq(5,80,5))
+         ,rsa.m.ql,"South Africa","Male","Data")
+))
+colnames(q.logit.data) <- c("Age","Value","Country","Sex","Source")
+rownames(q.logit.data) <- seq(1,18*4,1)
+q.logit.data$Age <- as.numeric(as.character(q.logit.data$Age))
+q.logit.data$Value <- as.numeric(as.character(q.logit.data$Value))
+# predicted values
+q.logit.pred <- data.frame(rbind(
+  cbind(c(0,1,seq(5,80,5))
+         ,logit(mex.f.p5.ca)[1:18],"Mexico","Female","Predicted by SVD-Comp")
+  ,cbind(c(0,1,seq(5,80,5))
+         ,logit(mex.m.p5.ca)[1:18],"Mexico","Male","Predicted by SVD-Comp")
+  ,cbind(c(0,1,seq(5,80,5))
+         ,logit(mex.f.LQp.ca)[1:18],"Mexico","Female","Predicted by Log Quad")
+  ,cbind(c(0,1,seq(5,80,5))
+         ,logit(mex.m.LQp.ca)[1:18],"Mexico","Male","Predicted by Log Quad")
+  ,cbind(c(0,1,seq(5,80,5))
+         ,logit(rsa.f.p5.ca)[1:18],"South Africa","Female","Predicted by SVD-Comp")
+  ,cbind(c(0,1,seq(5,80,5))
+         ,logit(rsa.m.p5.ca)[1:18],"South Africa","Male","Predicted by SVD-Comp")
+  ,cbind(c(0,1,seq(5,80,5))
+         ,logit(rsa.f.LQp.ca)[1:18],"South Africa","Female","Predicted by Log Quad")
+  ,cbind(c(0,1,seq(5,80,5))
+         ,logit(rsa.m.LQp.ca)[1:18],"South Africa","Male","Predicted by Log Quad")
+))
+colnames(q.logit.pred) <- c("Age","Value","Country","Sex","Source")
+rownames(q.logit.pred) <- seq(1,18*8,1)
+q.logit.pred$Age <- as.numeric(as.character(q.logit.pred$Age))
+q.logit.pred$Value <- as.numeric(as.character(q.logit.pred$Value))
+q.logit.pred
+
+
+# plot data and predictions
+ggplot(data = q.logit.data, aes(x=Age, y=Value, colour=Source)) +
+  geom_line(data = q.logit.pred, aes(x=Age, y=Value, colour=Source), size=1) + 
+  scale_x_continuous(breaks=c(0,1,seq(5,80,5))
+                     ,labels=c("0,1-4","",paste(seq(5,80,5),c(seq(9,84,5)),sep="-"))
+                     ,minor_breaks = c()) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  geom_point(size=1.5) +
+  # geom_line(aes(x=Age, y=Value, colour=Source), size=0.5) +
+	labs(y = expression(''[n]*'q'[x]*' (logit scale)'), x = "Age (years)") +
+  facet_wrap(~interaction(Sex,Country,sep=" - "),ncol=2) +
+  # facet_wrap(~Sex + Country,ncol=2) +
+	theme(legend.title=element_blank(),legend.position=c(.15,.91)) + 
+  theme(legend.position="bottom", legend.box = "horizontal")
+ggsave("../figures/fig7.pdf",width=6.5,height=6.5,units=c("in"))
+```
+
+# Make Compressed Models Object for Package
+
+The SVD-Comp package predicts life tables using child or (child,adult) mortality as inputs.  To do this calibrated by HMD, it needs all the component values and models calculated above.  This piece of code wraps all that into a nice list and saves it in very compact form.
+
+```{r make-mods-object, eval=TRUE, echo=TRUE}
+# function to make a list with all the informatin necessary to do predicdtions
+#   using the HMD-calibrated SVD-Comp
+make.models <- function(allModels.f,allModels.sm.f,allModels.m,allModels.sm.m) {
+  
+  # initialize array to hold components
+  components <- array(
+    data=rep(0,880),
+    dim=c(2,4,110),
+    dimnames=list(
+      c("female","male"),
+      c("1","2","3","4"),
+      c(paste(seq(0,109,1),sep='","'))
+    )
+  )
+  
+  # initialize array to hold smoothed components
+  components.sm <- array(
+    data=rep(0,880),
+    dim=c(2,4,110),
+    dimnames=list(
+      c("female","male"),
+      c("1","2","3","4"),
+      c(paste(seq(0,109,1),sep='","'))
+    )
+  )
+  
+  # grab the component values
+  for (s in 1:2) {
+    for (v in 1:4) {
+      ifelse(
+        s==1,
+        components[s,v,] <- allModels.f$svd$s1$d[v]*allModels.f$svd$s1$u[,v],
+        components[s,v,] <- allModels.m$svd$s1$d[v]*allModels.m$svd$s1$u[,v]
+      )
+    }
+  }
+  
+  # store female and male components separately
+  components.f <- components[1,,]
+  components.m <- components[2,,]
+  
+  # same for smooth components
+  for (s in 1:2) {
+    for (v in 1:4) {
+      ifelse(
+        s==1,
+        components.sm[s,v,] <- allModels.sm.f$svd$s1$d[v]*allModels.sm.f$svd.sm$s1$u[,v],
+        components.sm[s,v,] <- allModels.sm.m$svd$s1$d[v]*allModels.sm.m$svd.sm$s1$u[,v]
+      )
+    }
+  }
+  
+  components.sm.f <- components.sm[1,,]
+  components.sm.m <- components.sm[2,,]
+  
+  # # plot the components to be sure you have the right ones
+  # par(mfrow=c(4,2))
+  # pdf(file="../figures/components.pdf")
+  # {
+  #   plot(components[1,1,])
+  #   points(components[2,1,],col="red")
+  #   points(components.sm[1,1,],type="l")
+  #   points(components.sm[2,1,],type="l",col="red")
+  # 
+  #   plot(components[1,2,])
+  #   points(components[2,2,],col="red")
+  #   points(components.sm[1,2,],type="l")
+  #   points(components.sm[2,2,],type="l",col="red")
+  # 
+  #   plot(components[1,3,])
+  #   points(components[2,3,],col="red")
+  #   points(components.sm[1,3,],type="l")
+  #   points(components.sm[2,3,],type="l",col="red")
+  # 
+  #   plot(components[1,4,])
+  #   points(components[2,4,],col="red")
+  #   points(components.sm[1,4,],type="l")
+  #   points(components.sm[2,4,],type="l",col="red")
+  # 
+  #   plot(components.sm[1,1,],type="l",ylim=c(-1250,75))
+  #   abline(h=0,lwd=0.5)
+  #   points(components.sm[1,2,],type="l",col="red")
+  #   points(components.sm[1,3,],type="l",col="green")
+  #   points(components.sm[1,4,],type="l",col="blue")
+  # 
+  #   plot(components.sm[1,2,],type="l",col="red")
+  #   abline(h=0,lwd=0.5)
+  #   points(components.sm[1,3,],type="l",col="green")
+  #   points(components.sm[1,4,],type="l",col="blue")
+  # 
+  #   plot(components.sm[2,1,],type="l",ylim=c(-1250,75))
+  #   abline(h=0,lwd=0.5)
+  #   points(components.sm[2,2,],type="l",col="red")
+  #   points(components.sm[2,3,],type="l",col="green")
+  #   points(components.sm[2,4,],type="l",col="blue")
+  # 
+  #   plot(components.sm[2,2,],type="l",col="red")
+  #   abline(h=0,lwd=0.5)
+  #   points(components.sm[2,3,],type="l",col="green")
+  #   points(components.sm[2,4,],type="l",col="blue")
+  # } # test that I got the right SVD stuff
+  # dev.off()
+  
+  # strip unnecessary stuff from an object
+  cleanModel = function(cm) {
+    cm$y = c()
+    cm$model = c()
+    cm$residuals = c()
+    cm$fitted.values = c()
+    cm$effects = c()
+    cm$qr$qr = c()
+    cm$linear.predictors = c()
+    cm$weights = c()
+    cm$prior.weights = c()
+    cm$data = c()
+    attr(cm$terms,".Environment") = c()
+    attr(cm$formula,".Environment") = c()
+    return(cm)
+  }
+  
+  # # have a look at the massive compression
+  # object.size(allModels.m$mods$s1$v1)
+  # object.size(cleanModel(allModels.m$mods$s1$v1))
+  # as.numeric(object.size(cleanModel(allModels.m$mods$s1$v1))) / as.numeric(object.size(allModels.m$mods$s1$v1))
+  
+  # create the female models list
+  mods.f <- list(
+    components = components.f, # components
+    components.sm = components.sm.f, # smooth components
+    aml = cleanModel(allModels.f$mods$s1$aml), # adult mx model
+    v1 = cleanModel(allModels.f$mods$s1$v1), # v1 model
+    v2 = cleanModel(allModels.f$mods$s1$v2), # v2 model
+    v3 = cleanModel(allModels.f$mods$s1$v3), # v3 model
+    v4 = cleanModel(allModels.f$mods$s1$v4), # v4 model
+    offset = allModels.f$offset, # offset
+    q0 = cleanModel(allModels.f$mods$s1$q0), # 1q0 model
+    rownames = rownames(allModels.f$ql.samp$s1) # row names = age groups
+  )
+  # mods.f
+  # object.size(mods.f)
+  
+  # make male models list
+  mods.m <- list(
+    components = components.m,
+    components.sm = components.sm.m,
+    aml = cleanModel(allModels.m$mods$s1$aml),
+    v1 = cleanModel(allModels.m$mods$s1$v1),
+    v2 = cleanModel(allModels.m$mods$s1$v2),
+    v3 = cleanModel(allModels.m$mods$s1$v3),
+    v4 = cleanModel(allModels.m$mods$s1$v4),
+    offset = allModels.m$offset,
+    q0 = cleanModel(allModels.m$mods$s1$q0),
+    rownames = rownames(allModels.m$ql.samp$s1)
+  )
+  # mods.m
+  object.size(mods.m)
+  
+  # make a list of both female and male model lists
+  mods <- list(
+    female = mods.f,
+    male = mods.m
+  )
+  # mods
+  
+  # have a look at the size of the finished models list
+  # format(object.size(mods),units="Mb")
+  
+  # library(plyr)
+  # d <- ldply(names(mods), function(v) {
+  #   v.size <- format(object.size(mods[[v]]), unit="Mb")
+  #   data.frame(variable=v, size=v.size)
+  # })
+  # # have a look at the sizes of the components of the models list
+  # d[order(as.numeric(d$size), decreasing=TRUE),]
+
+  return(mods)
+
+}
+
+# create and same the models object for the package
+mods.package <- make.models(mod.1_0.f,mod.1_0.sm.f,mod.1_0.m,mod.1_0.sm.m)
+# have a look at it
+mods.package
+save(file="../RData/mods.RData",compress=TRUE,list=c("mods.package"))
+# the saved file should be around 15KB !!
+```
+
+# Wrap up
+
+Save the workspace and clear everything
+
+```{r wrap-up, eval=TRUE, echo=TRUE}
+save(file=paste("../Rdata/All-SVD-Comp_"
+                ,format(Sys.time(),"%Y-%m-%d")
+                ,".RData",sep=""),compress=TRUE,list=ls())
+rm(list=ls())
+```
+
+
