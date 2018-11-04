@@ -5,7 +5,7 @@ Also see [*A Singular Value Decomposition-based Factorization and Parsimonious C
 ## Overview
 This GitHub repository contains code for the model and the LaTeX source files for the manuscript that describes the model, published in the journal [*Demography*](https://link.springer.com/journal/13524) (currently *in press*).   
 
-All of the code used to create the model is contained in the R Markdown file *Rmd/SVD-Comp.Rmd*.  The code saves R Data objects containing the data, various intermediate results, and outputs in *RData*.  It also saves tables and figures for the manuscript in *tables* and *figures*.  It is compiled and rendered into the PDF *Rmd/SVD-Comp.pdf* that contains all the results.  **NB**: You will need to obtain and insert your own username and password for the [Human Mortality Database](https://www.mortality.org). Edit lines 93 and 94.
+All of the code used to create the model is contained in the R Markdown file *Rmd/SVD-Comp.Rmd*.  The code saves R Data objects containing the data, various intermediate results, and outputs in *RData*.  It also saves tables and figures for the manuscript in *tables* and *figures*.  It is compiled and rendered into the PDF *Rmd/SVD-Comp.pdf* that contains all the results.  **NB**: You will need to obtain and insert your own username and password for the [Human Mortality Database](https://www.mortality.org). Edit lines containing 'hmd.user=' and 'hmd.pass', near line number 516.
 
 The manuscript itself is composed of two LaTeX files in *manuscript* - one for the main manuscript and one for the appendices.  They cross reference each other so you need to compile both and then recompile both to get all the references updated.
 
