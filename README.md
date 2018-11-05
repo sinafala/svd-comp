@@ -27,7 +27,7 @@ This material has been prepared on an Apple Macintosh running Mac OS High Sierra
 ## To Run the Markdown File
 * If you're a regular GitHub user, clone the *svd-comp* repository
 * If you're not a regular GitHub user, go to the upper right corner of this web page and click 'Clone or Download' and in the small window that appears click 'Download Zip'.  After the .zip file has downloaded, move it somewhere conveneint and unzip it.
-*  Using RStudio open *Rmd/SVD-Comp.Rmd*
+*  Using RStudio to open *Rmd/SVD-Comp.Rmd*
 
 ## Directory structure
 * *Rmd* contains the R Markdown file that executes the main code - *SVD-Comp.Rmd*.
