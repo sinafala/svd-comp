@@ -520,7 +520,7 @@ download.result <- download.hmd(
 if (class(download.result)=="try-error") {
   print(paste("Something went wrong -- usually this means the HMD site is not available.",
               " Using local cached version of HMD instead of a live download.",sep=""))
-  unzip(zipfile="../data/HMD Archive/hmd_statistics.zip",exdir="../data/HMD/hmd_statistics")
+  unzip(zipfile="../data/HMD Archive/hmd_statistics.zip",exdir="../data/HMD")
 } 
 ```
 
