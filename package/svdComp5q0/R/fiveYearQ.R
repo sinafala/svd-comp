@@ -8,7 +8,6 @@
 #' @examples
 #' q1 <- svdComp5q0("female",0.08,out5=FALSE)
 #' q1to5(q1)
-#' @export
 q1to5 <- function(q1) {
 
   if (missing(q1))

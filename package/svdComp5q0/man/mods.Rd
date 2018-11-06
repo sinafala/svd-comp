@@ -3,7 +3,7 @@
 \docType{data}
 \name{mods}
 \alias{mods}
-\title{mods}
+\title{SVD-Comp Models Data Set - 'mods'.}
 \format{An R list object with members:
 \describe{
   \item{\strong{Female}:}{

@@ -3924,10 +3924,10 @@ make.models <- function(allModels.f,allModels.sm.f,allModels.m,allModels.sm.m) {
 }
 
 # create and same the models object for the package
-mods.package <- make.models(mod.1_0.f,mod.1_0.sm.f,mod.1_0.m,mod.1_0.sm.m)
+mods <- make.models(mod.1_0.f,mod.1_0.sm.f,mod.1_0.m,mod.1_0.sm.m)
 # have a look at it
-mods.package
-save(file="../RData/mods.RData",compress=TRUE,list=c("mods.package"))
+mods
+save(file="../RData/mods.RData",compress=TRUE,list=c("mods"))
 # the saved file should be around 15KB !!
 ```
 

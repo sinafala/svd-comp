@@ -1,4 +1,4 @@
-#' mods
+#' SVD-Comp Models Data Set - 'mods'.
 #'
 #' An R object containing a hierarchy of lists that contain SVD-derived components,
 #'     estimated model coefficients, and other parameter
@@ -41,10 +41,10 @@
 #'     }
 #' }
 #' @source See model development in \url{https://arxiv.org/abs/1612.01408}
-#' @export
 "mods"
 
 # load the model data: svd components and regression coefficients
 load("./data/mods.RData")
+
 
 
