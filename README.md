@@ -41,4 +41,4 @@ This material has been prepared on an Apple Macintosh running Mac OS High Sierra
 * *tables* contains a set of text files, .txt and .csv, that contain the contents of all the tables in the manuscript. These are produced by code in the R Markdown file *Rmd/SVD-Comp.Rmd*.
 * *figures* contains a set of PDF files that contain the figures included in the manuscript.  These are produced by code in the R Markdown file *Rmd/SVD-Comp.Rmd*.
 * *manuscript* contains two .tex files and related .bib and .bst files for the main manuscript and appendices.
-* *package* contains an RStudio package project with all of the materials used to create the 'svdComp5q0' R package that implements the model.
+* *package* contains an RStudio package project with all of the materials used to create the **svdComp5q0** R package that implements the model.
