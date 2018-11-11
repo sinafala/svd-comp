@@ -38,7 +38,7 @@ This material has been prepared on an Apple Macintosh running Mac OS High Sierra
 * *data* contains the HMD data downloaded from the HMD web site.  
     * *non-HMD life tables* contains the data used to test the model on other countries.  The .csv files are read by *Rmd/SVD-Comp.Rmd* to conduct the comparisons.
     * *HMD* is where the downloaded HMD data are stored, empty until populated by the code.
-* *tables* contains a set of text files, .txt and .csv, that contain the contents of all the tables in the manuscript. These are produced by code in the R Markdown file './Rmd/SVD-Comp.Rmd'.
+* *tables* contains a set of text files, .txt and .csv, that contain the contents of all the tables in the manuscript. These are produced by code in the R Markdown file *Rmd/SVD-Comp.Rmd*.
 * *figures* contains a set of PDF files that contain the figures included in the manuscript.  These are produced by code in the R Markdown file *Rmd/SVD-Comp.Rmd*.
 * *manuscript* contains two .tex files and related .bib and .bst files for the main manuscript and appendices.
 * *package* contains an RStudio package project with all of the materials used to create the 'svdComp5q0' R package that implements the model.
