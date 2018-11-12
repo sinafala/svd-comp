@@ -21,13 +21,13 @@ This material has been prepared on an Apple Macintosh running Mac OS High Sierra
 
 ## Installing **svdComp5q0** R Package
 * Install and load the **devtools** package
-* Use devtools to install the **svdComp5q0** R package directly from GitHub using this command:   
+* Use devtools to install the **svdComp5q0** R package directly from GitHub using this command. Be patient, for whatever reason this sometimes takes a while to run.   
 `install_github(repo = "sinafala/svd-comp", subdir = "package/svdComp5q0")`
 
 ## To Run the Markdown File
 * If you're a regular GitHub user, clone the *svd-comp* repository
 * If you're not a regular GitHub user, go to the upper right corner of this web page and click 'Clone or Download' and in the small window that appears click 'Download Zip'.  After the .zip file has downloaded, move it somewhere conveneint and unzip it.
-*  Using RStudio to open *Rmd/SVD-Comp.Rmd*
+*  Use RStudio to open *Rmd/SVD-Comp.Rmd*
 
 ## Directory structure
 * *Rmd* contains the R Markdown file that executes the main code - *SVD-Comp.Rmd*.
@@ -38,7 +38,7 @@ This material has been prepared on an Apple Macintosh running Mac OS High Sierra
 * *data* contains the HMD data downloaded from the HMD web site.  
     * *non-HMD life tables* contains the data used to test the model on other countries.  The .csv files are read by *Rmd/SVD-Comp.Rmd* to conduct the comparisons.
     * *HMD* is where the downloaded HMD data are stored, empty until populated by the code.
-* *tables* contains a set of text files, .txt and .csv, that contain the contents of all the tables in the manuscript. These are produced by code in the R Markdown file './Rmd/SVD-Comp.Rmd'.
+* *tables* contains a set of text files, .txt and .csv, that contain the contents of all the tables in the manuscript. These are produced by code in the R Markdown file *Rmd/SVD-Comp.Rmd*.
 * *figures* contains a set of PDF files that contain the figures included in the manuscript.  These are produced by code in the R Markdown file *Rmd/SVD-Comp.Rmd*.
 * *manuscript* contains two .tex files and related .bib and .bst files for the main manuscript and appendices.
-* *package* contains an RStudio package project with all of the materials used to create the 'svdComp5q0' R package that implements the model.
+* *package* contains an RStudio package project with all of the materials used to create the **svdComp5q0** R package that implements the model.
