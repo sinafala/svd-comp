@@ -74,15 +74,15 @@
 \definechangesauthor[name={Reviewer 5}, color=OliveGreen]{r5}
 \definechangesauthor[name={Editors}, color=Violet]{editors}
 \definechangesauthor[name={Notes}, color=brown]{note}
-\setremarkmarkup{(#2)}
+%\setremarkmarkup{(#2)}
 
 %%% Alternative definition to have the remarks
 %%% in the margins instead of footnotes
-\usepackage{todonotes}
-\setlength{\marginparwidth}{3cm}
-\makeatletter
-\setremarkmarkup{\todo[color=Changes@Color#1!20,size=\scriptsize]{#1: #2}}
-\makeatother
+%\usepackage{todonotes}
+%\setlength{\marginparwidth}{3cm}
+%\makeatletter
+%\setremarkmarkup{\todo[color=Changes@Color#1!20,size=\scriptsize]{#1: #2}}
+%\makeatother
 
 %% Rather hacky definition of a plain remark/note
 %% by riding on \added

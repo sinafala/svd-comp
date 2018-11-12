@@ -10,19 +10,25 @@ output:
 
 
 ```{r echo=FALSE}
-# install required packages
-require("knitr",quietly=TRUE)
-require("bookdown",quietly=TRUE)
-require("formatR",quietly=TRUE)
-require("devtools",quietly=TRUE)
-require("reshape2",quietly=TRUE)
-require("ggplot2",quietly=TRUE)
-require("plyr",quietly=TRUE)
-require("stargazer",quietly=TRUE)
-require("xtable",quietly=TRUE)
-require("readr",quietly=TRUE)
-require("stringr",quietly=TRUE)
-require("httr",quietly=TRUE)
+# install required packages that may not be installed now
+list.of.packages <- c(
+  "knitr",
+  "bookdown",
+  "formatR",
+  "devtools",
+  "reshape2",
+  "ggplot2",
+  "plyr",
+  "stargazer",
+  "xtable",
+  "readr",
+  "stringr",
+  "httr"
+)
+# identify required packages that are not already installed
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+# install required packages that are not already installed
+if(length(new.packages)) install.packages(new.packages)
 
 # load a few packages necessary to set up the Markdown file
 library(knitr)
