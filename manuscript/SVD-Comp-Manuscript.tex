@@ -65,7 +65,7 @@
 % for making changes in response to reviews
 % must come *after* xcolor
 % toggle the following two lines to reveal or hide the changes
-%\usepackage[]{changes}
+%\usepackage[commentmarkup=footnote]{changes}
 \usepackage[final]{changes}
 \definechangesauthor[name={Reviewer 1}, color=blue]{r1}
 \definechangesauthor[name={Reviewer 2}, color=blue]{r2}
@@ -74,19 +74,6 @@
 \definechangesauthor[name={Reviewer 5}, color=OliveGreen]{r5}
 \definechangesauthor[name={Editors}, color=Violet]{editors}
 \definechangesauthor[name={Notes}, color=brown]{note}
-%\setremarkmarkup{(#2)}
-
-%%% Alternative definition to have the remarks
-%%% in the margins instead of footnotes
-%\usepackage{todonotes}
-%\setlength{\marginparwidth}{3cm}
-%\makeatletter
-%\setremarkmarkup{\todo[color=Changes@Color#1!20,size=\scriptsize]{#1: #2}}
-%\makeatother
-
-%% Rather hacky definition of a plain remark/note
-%% by riding on \added
-\newcommand{\note}[2][]{\added[#1,remark={#2}]{}}
 
 \DeclareMathOperator{\Tr}{Tr}
 
@@ -256,8 +243,7 @@ Africa & 58 & 50 & 86.2\% & & 50 & 86.2\% \\
 \label{tab:mxMods}
 \end{table}
 
-The standard approach to generating complete age schedules of mortality for countries and \replaced{areas}{regions} with insufficient data is to take advantage of the fact that they do have information on child mortality.  Typically, model life tables are used to extrapolate full mortality schedules from $\qf$\replaced{ -- this is what t}{.  T}he UN Population Division \replaced{does (making heavy use of the traditional \cite{coale1966} model life tables)}{uses the Log Quadratic (Log-Quad) model created by \cite{wilmoth2012flexible} and updated by \cite{li2015wppLt} 
-to do this for the many countries and world regions with incomplete mortality data}, and the Institute for Health Metrics and Evaluation (IHME) uses variations on the Modifed Logit (Mod-Logit) model \citep{murray2003} to do the same.  
+The standard approach to generating complete age schedules of mortality for countries and \replaced{areas}{regions} with insufficient data is to take advantage of the fact that they do have information on child mortality.  Typically, model life tables are used to extrapolate full mortality schedules from $\qf$\replaced{ -- this is what t}{.  T}he UN Population Division \replaced{does (making heavy use of the traditional \cite{coale1966} model life tables)}{uses the Log Quadratic (Log-Quad) model created by \mbox{\cite{wilmoth2012flexible}} and updated by \mbox{\cite{li2015wppLt}} to do this for the many countries and world regions with incomplete mortality data}, and the Institute for Health Metrics and Evaluation (IHME) uses variations on the Modifed Logit (Mod-Logit) model \citep{murray2003} to do the same.  
 
 The commonly used model life table systems -- Regional Model Life Tables and Stable Populations \citep{coale1966}, Life Tables for Developing Countries \citep{united1982model}, Modified Logit Life Table System (Mod-Logit) \citep{murray2003, Wang2013} and Flexible Two Dimensional Mortality Model (Log-Quad) \citep{wilmoth2012flexible} -- combine a specific model structure and defined variable parameters with a set of fixed parameters that summarize the relationships between mortality at different ages in a set of observed life tables.  All are \emph{empirical} models in the sense that they summarize observed mortality and use that summary to produce \replaced{predicted}{arbitrary} mortality schedules that are consistent with observed mortality.  They come in both regional and continuous forms. \replaced[id=r1]{The regional models identify and replicate commonly observed mortality patterns associated with geographic regions (and \textit{de facto} time periods) and allow mortality to vary continuously within each region-specific pattern.  In contrast the continuous models generate mortality patterns that vary smoothly. Both approaches are essentially two-parameter models.  The regional models first identify a discrete region and then use effectively continuously varying life expectancy within each region to adjust the level of region-specific mortality. The continuous models have two continuously varying parameters, e.g. life expectancy, child mortality, or adult mortality.}
 {The regional models identify and replicate commonly observed mortality patterns associated with geographic regions (and \textit{de facto} time periods) while the continuous models generate mortality patterns that vary smoothly. The input parameters range from region and life expectancy to child and adult mortality.} 
@@ -380,11 +366,11 @@ Finally, we recently applied the component model to HIV-related mortality in cou
 %%% === %%% === %%%
 \subsection{Human Mortality Database Life Tables - HMD}
 
-The Human Mortality Database (HMD) \citep{hmd2016} contains rigorously cleaned, checked and validated information on deaths and exposure from a number of \added{mainly} developed countries \added{where ``death registration and census data are virtually complete''}.  The data are aggregated and presented in a wide variety of formats.  The objective of this analysis is to capture and characterize as much variability in age-specific mortality as possible, and consequently I chose to use the $1 \times 1$ HMD life tables for each sex.  Those provide all columns of a standard life table for single calendar years by single year of age from 0 $\rightarrow$ 110+.  Each country provides data for different historical periods, and some countries are subdivided into more specific subpopulations.  In the latter situation a `national population' life table is typically provided that aggregates across the subgroups.  Both the national and subgroup populations are included in this analysis to maximize the variability in age-specific mortality schedules in the overall dataset.  A few of the $1 \times 1$ life tables from the HMD contain problems: \note[id=note]{The excluded tables have been updated to reflect the updates in HMD through August 21, 2018.} 
+The Human Mortality Database (HMD) \citep{hmd2016} contains rigorously cleaned, checked and validated information on deaths and exposure from a number of \added{mainly} developed countries \added{where ``death registration and census data are virtually complete''}.  The data are aggregated and presented in a wide variety of formats.  The objective of this analysis is to capture and characterize as much variability in age-specific mortality as possible, and consequently I chose to use the $1 \times 1$ HMD life tables for each sex.  Those provide all columns of a standard life table for single calendar years by single year of age from 0 $\rightarrow$ 110+.  Each country provides data for different historical periods, and some countries are subdivided into more specific subpopulations.  In the latter situation a `national population' life table is typically provided that aggregates across the subgroups.  Both the national and subgroup populations are included in this analysis to maximize the variability in age-specific mortality schedules in the overall dataset.  A few of the $1 \times 1$ life tables from the HMD contain problems: \comment[id=note]{The excluded tables have been updated to reflect the updates in HMD through August 21, 2018.} 
 \begin{enumerate*}[label=\arabic*)]
 \item the life tables for Belgium 1914-1918 for both sexes contain no data, and
 \item the female life tables for Iceland (ISL) 1852, and New Zealand Mauri (NZL\_MA) 1949, 1956, and 1959 display implausible mortality at older ages
-\end{enumerate*}.  All of those life tables are excluded.  Table \ref{tab:hmdData} \note[id=note]{The format of this table was changed slightly to allow its contents to be generated and imported into the manuscript in an automated way.  The contents of the table are updated to reflect the most up-to-date HMD as of August 21, 2018.} contains an organized list of the life tables included in this analysis.  There are \LTtot life tables for each sex, \LTtotBoth in total.  The HMD data used in this analysis are contained in the file at \url{http://www.mortality.org/hmd/zip/all_hmd/hmd_statistics.zip} downloaded on \HMDdate.
+\end{enumerate*}.  All of those life tables are excluded.  Table \ref{tab:hmdData} \comment[id=note]{The format of this table was changed slightly to allow its contents to be generated and imported into the manuscript in an automated way.  The contents of the table are updated to reflect the most up-to-date HMD as of August 21, 2018.} contains an organized list of the life tables included in this analysis.  There are \LTtot life tables for each sex, \LTtotBoth in total.  The HMD data used in this analysis are contained in the file at \url{http://www.mortality.org/hmd/zip/all_hmd/hmd_statistics.zip} downloaded on \HMDdate.
 
 \renewcommand{\arraystretch}{0.96}
 \begin{table}[htp!]
@@ -451,7 +437,7 @@ The basic form of the SVD in Equation \ref{eq:svd} can be rearranged to yield tw
 %
 where $\mbf{u}_i$ are LSVs, $\mbf{v}_i$ are RSVs, $s_i$ are SVs, $\rho$ is the rank of $\mbf{X}$, $\mbf{x}_\ell$ are columns of $\mbf{X}$, and $v_{\ell i}$ are the elements of RSV $\mbf{v}_i$, see Appendix \ref{app:svd} (on-line appendices).  Equation \ref{eq:sumRank-1} says that $\mbf{X}$ can be written as a sum of rank-1 matrices, each created from one of the LSVs by applying weights in the form of the elements of the corresponding RSV.  Equivalently, Equation \ref{eq:goldenEq} says that each column $\mbf{x}_\ell$ of $\mbf{X}$ can be written as the weighted sum of the LSVs with the weight for each being the $\ell$\textsuperscript{th} element of the corresponding RSV\footnote{This is the expression used to model the first residual in Wilmoth's age/period/cohort model, Equation \ref{eq:wilmoth}.}.  The LSVs and SVs are constant, so the the weights are the `variables' in these expressions, and their values determine how much of each LSV is added to the mixture to represent the original data.  Finally because the LSVs are independent, OLS regression can be used to estimate models that relate $\mbf{x}_\ell$ to the LSVs. If the constant is constrained to be zero, then the coefficients are equal to $s_iv_{\ell i}$.
 
-Because the RSVs define successively less variable dimensions in the data cloud, the first term in Equations \ref{eq:sumRank-1} and \ref{eq:goldenEq} contains the most information and subsequent terms contain less and less \citep{golub1987generalization}.  Including all $\rho$ terms replicates the original data matrix $\mbf{X}$ or any of its columns $\mbf{x}_\ell$ exactly, while including only the first few terms provides a good approximation.  \deleted[id=r4]{Often in demographic applications only the first two to three terms are necessary for a close approximation, see \cite{clark2015singular}.}    
+Because the RSVs define successively less variable dimensions in the data cloud, the first term in Equations \ref{eq:sumRank-1} and \ref{eq:goldenEq} contains the most information and subsequent terms contain less and less \citep{golub1987generalization}.  Including all $\rho$ terms replicates the original data matrix $\mbf{X}$ or any of its columns $\mbf{x}_\ell$ exactly, while including only the first few terms provides a good approximation.  \deleted[id=r4]{Often in demographic applications only the first two to three terms are necessary for a close approximation, see \mbox{\cite{clark2015singular}}.}    
 
 
 %%% === %%% === %%%

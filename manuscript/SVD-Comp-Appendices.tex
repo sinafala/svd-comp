@@ -65,7 +65,7 @@
 % for making changes in response to reviews
 % must come *after* xcolor
 % toggle the following two lines to reveal or hide the changes
-%\usepackage[]{changes}
+%\usepackage[commentmarkup=footnote]{changes}
 \usepackage[final]{changes}
 \definechangesauthor[name={Reviewer 1}, color=blue]{r1}
 \definechangesauthor[name={Reviewer 2}, color=blue]{r2}
@@ -74,19 +74,6 @@
 \definechangesauthor[name={Reviewer 5}, color=OliveGreen]{r5}
 \definechangesauthor[name={Editors}, color=Violet]{editors}
 \definechangesauthor[name={Notes}, color=brown]{note}
-%\setremarkmarkup{(#2)}
-
-%%% Alternative definition to have the remarks
-%%% in the margins instead of footnotes
-%\usepackage{todonotes}
-%\setlength{\marginparwidth}{3cm}
-%\makeatletter
-%\setremarkmarkup{\todo[color=Changes@Color#1!20,size=\scriptsize]{#1: #2}}
-%\makeatother
-
-%% Rather hacky definition of a plain remark/note
-%% by riding on \added
-\newcommand{\note}[2][]{\added[#1,remark={#2}]{}}
 
 \DeclareMathOperator{\Tr}{Tr}
 
