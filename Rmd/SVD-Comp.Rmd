@@ -28,7 +28,7 @@ list.of.packages <- c(
 # identify required packages that are not already installed
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 # install required packages that are not already installed
-if(length(new.packages)) install.packages(new.packages)
+if(length(new.packages)) install.packages(new.packages,type="binary")
 
 # load a few packages necessary to set up the Markdown file
 library(knitr)

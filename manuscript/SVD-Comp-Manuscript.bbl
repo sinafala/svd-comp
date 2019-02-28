@@ -1,0 +1,284 @@
+\begin{thebibliography}{51}
+\def\enquote#1{``#1''}
+\expandafter\ifx\csname natexlab\endcsname\relax\def\natexlab#1{#1}\fi
+\expandafter\ifx\csname url\endcsname\relax
+  \def\url#1{{\tt #1}}\fi
+\expandafter\ifx\csname urlprefix\endcsname\relax\def\urlprefix{URL }\fi
+
+\bibitem[{Alexander et~al.(2016)Alexander, Zagheni and
+  Barbieri}]{alexander2016flexible}
+Alexander, M., E.~Zagheni and M.~Barbieri. 2016. \enquote{A Flexible Bayesian
+  Model for Estimating Subnational Mortality.} {\em arXiv preprint
+  arXiv:1607.03534\/} .
+
+\bibitem[{Bell(1997)}]{bell1997comparing}
+Bell, W.~R. 1997. \enquote{Comparing and Assessing Time Series Methods for
+  Forecasting Age-Specific Fertility and Mortality Rates.} {\em Journal of
+  Official Statistics\/} 13.
+
+\bibitem[{Bourgeois-Pichat(1962)}]{bourgeois1962factor}
+Bourgeois-Pichat, J. 1962. \enquote{Factor analysis and sex-age-specific death
+  rates: a contribution to the study of the dimensions of mortality.} {\em
+  United Nations Population Bulletin\/} (6):147--201.
+
+\bibitem[{Bourgeois-Pichat(1990)}]{bourgeois1990application}
+---{}---{}---. 1990. \enquote{Application de l'analyse factorielle {\`a}
+  l'{\'e}tude de la mortalit{\'e}.} {\em Population (french edition)\/}
+  45(4-5):773--802.
+
+\bibitem[{Bozik and Bell(1987)}]{bozik1987forecasting}
+Bozik, J.~E. and W.~R. Bell. 1987. \enquote{Forecasting age specific fertility
+  using principal components.} In {\em Proceedings of the American Statistical
+  Association, Social Statistics Section\/}, vol. 396, p. 401.
+
+\bibitem[{Brass(1971)}]{brass1971scale}
+Brass, W. 1971. \enquote{On the scale of mortality.} In {\em Biological Aspects
+  of Demography\/}, edited by W.~Brass, Taylor and Francis: London, UK, pp.
+  69--110.
+
+\bibitem[{Carter and Lee(1986)}]{carter1986joint}
+Carter, L.~R. and R.~D. Lee. 1986. \enquote{Joint forecasts of US marital
+  fertility, nuptiality, births, and marriages using time series models.} {\em
+  Journal of the American Statistical Association\/} 81(396):902--911.
+
+\bibitem[{Clark(2001)}]{clarkPhD}
+Clark, S.~J. 2001. {\em An Investigation into the Impact of HIV on Population
+  Dynamics in Africa\/}. Ph.D. thesis, University of Pennsylvania.
+
+\bibitem[{Clark(2015)}]{clark2015singular}
+---{}---{}---. 2015. \enquote{A Singular Value Decomposition-based
+  Factorization and Parsimonious Component Model of Demographic Quantities
+  Correlated by Age: Predicting Complete Demographic Age Schedules with Few
+  Parameters.} {\em arXiv preprint arXiv:1504.02057\/} .
+
+\bibitem[{Clark et~al.(2009)Clark, Jasseh, Punpuing, Zulu, Bawah and
+  Sankoh}]{clark2009IndMltPaa}
+Clark, S.~J., M.~Jasseh, S.~Punpuing, E.~Zulu, A.~Bawah and O.~Sankoh. 2009.
+  \enquote{INDEPTH Model Life Tables 2.0.} In {\em Annual Conference of the
+  Population Association of America\/}, Population Association of America
+  (PAA).
+
+\bibitem[{Clark and Sharrow(2011{\natexlab{a}})}]{clark2011ContMltPaa}
+Clark, S.~J. and D.~J. Sharrow. 2011{\natexlab{a}}. \enquote{Contemporary Model
+  Life Tables for Developed Countries -- An Application of Model-based
+  Clustering.} In {\em Annual Conference of the Population Association of
+  America\/}, Population Association of America (PAA).
+
+\bibitem[{Clark and Sharrow(2011{\natexlab{b}})}]{clarkSharrow2011}
+---{}---{}---. 2011{\natexlab{b}}. \enquote{Contemporary Model Life Tables for
+  Developed Countries: An Application of Model-based Clustering.} {\em Center
+  for Statistics and the Social Sciences (CSSS) Working Paper Series\/} (107).
+  \urlprefix\url{http://www.csss.washington.edu/Papers/wp107.pdf}.
+
+\bibitem[{Coale and Demeny(1966)}]{coale1966}
+Coale, A.~J. and P.~Demeny. 1966. {\em Regional Model Life Tables and Stable
+  Populations\/}. Princeton University Press.
+
+\bibitem[{Coale and Trussell(1974)}]{coale1974model}
+Coale, A.~J. and T.~J. Trussell. 1974. \enquote{Model fertility schedules:
+  variations in the age structure of childbearing in human populations.} {\em
+  Population Index\/} (1974):185--258.
+
+\bibitem[{Fosdick and Hoff(2012)}]{fosdick2012separable}
+Fosdick, B.~K. and P.~D. Hoff. 2012. \enquote{Separable factor analysis with
+  applications to mortality data.} {\em arXiv preprint arXiv:1211.3813\/} .
+
+\bibitem[{Golub et~al.(1987)Golub, Hoffman and
+  Stewart}]{golub1987generalization}
+Golub, G.~H., A.~Hoffman and G.~W. Stewart. 1987. \enquote{A generalization of
+  the Eckart-Young-Mirsky matrix approximation theorem.} {\em Linear Algebra
+  and Its Applications\/} 88:317--327.
+
+\bibitem[{Gompertz(1825)}]{gompertz1825nature}
+Gompertz, B. 1825. \enquote{On the nature of the function expressive of the law
+  of human mortality, and on a new mode of determining the value of life
+  contingencies.} {\em Philosophical transactions of the Royal Society of
+  London\/} 115:513--583.
+
+\bibitem[{Good(1969)}]{good1969some}
+Good, I.~J. 1969. \enquote{Some applications of the singular decomposition of a
+  matrix.} {\em Technometrics\/} 11(4):823--831.
+
+\bibitem[{Heligman and Pollard(1980)}]{heligman1980}
+Heligman, L. and J.~H. Pollard. 1980. \enquote{The age pattern of mortality.}
+  {\em Journal of the Institute of Actuaries\/} 107(434):49--80.
+
+\bibitem[{Hlavac(2015)}]{stargazer}
+Hlavac, M. 2015. {\em stargazer: Well-Formatted Regression and Summary
+  Statistics Tables\/}. Harvard University, Cambridge, USA.
+  \urlprefix\url{http://CRAN.R-project.org/package=stargazer}, r package
+  version 5.2.
+
+\bibitem[{{INDEPTH Network}(2002)}]{indepthMLT2002}
+{INDEPTH Network}. 2002. {\em INDEPTH Mortality Patterns for Africa\/}, {\em
+  Population and Health in Developing Countries\/}, vol.~1, chapter~7. Ottawa:
+  IDRC Press, pp. 83--128.
+
+\bibitem[{Ledermann(1969)}]{ledermann1969nouvelles}
+Ledermann, S. 1969. \enquote{Nouvelles Tables-types de Mortalit{\'e}.} No.~53
+  in INED Traveaux et Documents, Paris: Presses Universitaires de France.
+
+\bibitem[{Ledermann and Breas(1959)}]{ledermannBreas1959}
+Ledermann, S. and J.~Breas. 1959. \enquote{Les dimensions de la mortalit{\'e}.}
+  {\em Population\/} 14(4):637--682.
+
+\bibitem[{Lee(1993)}]{lee1993modeling}
+Lee, R.~D. 1993. \enquote{Modeling and forecasting the time series of {US}
+  fertility: Age distribution, range, and ultimate level.} {\em International
+  Journal of Forecasting\/} 9(2):187--202.
+
+\bibitem[{Lee and Carter(1992)}]{lee1992modeling}
+Lee, R.~D. and L.~R. Carter. 1992. \enquote{Modeling and forecasting {US}
+  mortality.} {\em Journal of the American statistical association\/}
+  87(419):659--671.
+
+\bibitem[{Li(2015)}]{li2015wppLt}
+Li, N. 2015. \enquote{Estimating Life Tables for Developing Countries.} Tech.
+  Rep. 2014/4, United Nations Department of Economic and Social Affairs
+  Population Division,
+  \url{http://www.un.org/en/development/desa/population/publications/pdf/technical/TP2014-4.pdf}.
+
+\bibitem[{Li and Gerland(2011)}]{li2011}
+Li, N. and P.~Gerland. 2011. \enquote{Modifying the {Lee-Carter} Method to
+  Project Mortality Changes up to 2100.} Paper presented at the 2011 Annual
+  Meeting of the Population Association of America (PAA), Washington, D.C.,
+  March 31-April 2.
+
+\bibitem[{Li and Anderson(2009)}]{li2009vitality}
+Li, T. and J.~J. Anderson. 2009. \enquote{The vitality model: A way to
+  understand population survival and demographic heterogeneity.} {\em
+  Theoretical Population Biology\/} 76(2):118--131.
+
+\bibitem[{Makeham(1860)}]{makeham1860law}
+Makeham, W.~M. 1860. \enquote{On the law of mortality and the construction of
+  annuity tables.} {\em The Assurance Magazine, and Journal of the Institute of
+  Actuaries\/} 8(6):301--310.
+
+\bibitem[{{Max Planck Institute for Demographic Research} et~al.(Downloaded
+  August 2018){Max Planck Institute for Demographic Research}, {University of
+  California, Berkeley} and {The Institut d'{\'e}tudes d{\'e}mographiques
+  (INED)}}]{hld2018}
+{Max Planck Institute for Demographic Research}, {University of California,
+  Berkeley} and {The Institut d'{\'e}tudes d{\'e}mographiques (INED)}.
+  Downloaded August 2018. {\em Human Life Table Database\/}.
+  \url{https://www.lifetable.de/data/hld.zip}.
+
+\bibitem[{Murray et~al.(2003)Murray, Ferguson, Lopez, Guillot, Salomon and
+  Ahmad}]{murray2003}
+Murray, C.~J., B.~D. Ferguson, A.~D. Lopez, M.~Guillot, J.~A. Salomon and
+  O.~Ahmad. 2003. \enquote{Modified logit life table system: principles,
+  empirical validation, and application.} {\em Population Studies\/}
+  57(2):165--182.
+
+\bibitem[{{\textsf{R} Core Team}(2016)}]{RCore}
+{\textsf{R} Core Team}. 2016. {\em R: A Language and Environment for
+  Statistical Computing\/}. \textsf{R} Foundation for Statistical Computing,
+  Vienna, Austria. \urlprefix\url{https://www.R-project.org/}.
+
+\bibitem[{{\textsf{R} Foundation for Statistical Computing}(2016)}]{R-url}
+{\textsf{R} Foundation for Statistical Computing}. 2016. {\em The \textsf{R}
+  Project for Statistical Computing\/}. \url{http://www.r-project.org}.
+  \urlprefix\url{http://www.R-project.org}.
+
+\bibitem[{Sharrow et~al.(2013)Sharrow, Clark, Collinson, Kahn and
+  Tollman}]{Sharrow_29_39}
+Sharrow, D., S.~J. Clark, M.~Collinson, K.~Kahn and S.~Tollman. 2013.
+  \enquote{{The age pattern of increases in mortality affected by HIV: Bayesian
+  fit of the Heligman-Pollard Model to data from the Agincourt HDSS field site
+  in rural northeast South Africa}.} {\em Demographic Research\/}
+  29(39):1039--1096.
+  \urlprefix\url{http://www.demographic-research.org/volumes/vol29/39/}.
+
+\bibitem[{Sharrow et~al.(2014)Sharrow, Clark and Raftery}]{sharrow2014modeling}
+Sharrow, D.~J., S.~J. Clark and A.~E. Raftery. 2014. \enquote{Modeling
+  age-specific mortality for countries with generalized HIV epidemics.} {\em
+  PloS ONE\/} 9(5):e96447.
+
+\bibitem[{Stewart(1993)}]{stewart1993early}
+Stewart, G.~W. 1993. \enquote{On the early history of the singular value
+  decomposition.} {\em SIAM review\/} 35(4):551--566.
+
+\bibitem[{Strang(2009)}]{strang2009introduction}
+Strang, G. 2009. {\em Introduction to Linear Algebra 4e\/}. Wellesley-Cambridge
+  Press.
+
+\bibitem[{{United Nations, Department of Economic and Social Affairs,
+  Population Division}(1955)}]{united1955age}
+{United Nations, Department of Economic and Social Affairs, Population
+  Division}. 1955. {\em Age and Sex Patterns of Mortality: Model Life-tables
+  for Under-developed Countries\/}. New York: United Nations Department of
+  International Economic and Social Affairs Population Division.
+
+\bibitem[{{United Nations, Department of Economic and Social Affairs,
+  Population Division}(1982)}]{united1982model}
+---{}---{}---. 1982. {\em Model life tables for developing countries\/}.
+  No.~77, New York: United Nations Department of International Economic and
+  Social Affairs Population Division.
+
+\bibitem[{{United Nations, Department of Economic and Social Affairs,
+  Population Division}(2015{\natexlab{a}})}]{unWPP2015Meta}
+---{}---{}---. 2015{\natexlab{a}}. \enquote{{File 0-2: Latest data sources used
+  to derive estimates for total population, fertility, mortality and migration
+  by countries or areas in WPP 2015 revision: POP/DB/WPP/Rev.2015/F0-2}.}
+  {\url{https://esa.un.org/unpd/wpp/DVD/Files/4\_Other\%20Files/WPP2015\_F02\_METAINFO.XLS}}.
+
+\bibitem[{{United Nations, Department of Economic and Social Affairs,
+  Population Division}(2015{\natexlab{b}})}]{un2015}
+---{}---{}---. 2015{\natexlab{b}}. {\em World Population Prospects: the 2015
+  Revision\/}. New York: United Nations.
+
+\bibitem[{{United Nations, Department of Economic and Social Affairs,
+  Population Division}(2015{\natexlab{c}})}]{unWPPMethods2015}
+---{}---{}---. 2015{\natexlab{c}}. {\em World Population Prospects: The 2015
+  Revision, Methodology of the United Nations Population Estimates and
+  Projections\/}. Working paper No. ESA/P/WP.242.
+
+\bibitem[{{University of California, Berkeley} and {Max Planck Institute for
+  Demographic Research}()}]{hmd2016}
+{University of California, Berkeley} and {Max Planck Institute for Demographic
+  Research}. {\em Human Mortality Database\/}. \url{http://www.mortality.org}
+  or \url{http://www.humanmortality.de}.
+
+\bibitem[{Wang et~al.(2013)Wang, Dwyer-Lindgren, Lofgren, Rajaratnam, Marcus,
+  Levin-Rector, Levitz, Lopez and Murray}]{Wang2013}
+Wang, H., L.~Dwyer-Lindgren, K.~T. Lofgren, J.~K. Rajaratnam, J.~R. Marcus,
+  A.~Levin-Rector, C.~E. Levitz, A.~D. Lopez and C.~J.~L. Murray. 2013.
+  \enquote{Age-specific and sex-specific mortality in 187 countries,
+  1970--2010: a systematic analysis for the global burden of disease study
+  2010.} {\em The Lancet\/} 380(9859):2071--2094.
+
+\bibitem[{Wilmoth et~al.(1989)Wilmoth, Vallin and Caselli}]{wilmoth1989quand}
+Wilmoth, J., J.~Vallin and G.~Caselli. 1989. \enquote{Quand certaines
+  g{\'e}n{\'e}rations ont une mortalit{\'e} diff{\'e}rente de celle que l'on
+  pourrait attendre.} {\em Population\/} 44(2):335--376.
+
+\bibitem[{Wilmoth et~al.(2012)Wilmoth, Zureick, Canudas-Romo, Inoue and
+  Sawyer}]{wilmoth2012flexible}
+Wilmoth, J., S.~Zureick, V.~Canudas-Romo, M.~Inoue and C.~Sawyer. 2012.
+  \enquote{A flexible two-dimensional mortality model for use in indirect
+  estimation.} {\em Population studies\/} 66(1):1--28.
+
+\bibitem[{Wilmoth(1988)}]{wilmoth1988Phd}
+Wilmoth, J.~R. 1988. {\em On the Statistical Analysis of Large Arrays of
+  Demographic Rates\/}. Ph.D. thesis, Department of Statistics, Princeton
+  University.
+
+\bibitem[{Wilmoth(1990)}]{wilmoth1990variation}
+---{}---{}---. 1990. \enquote{Variation in Vital Rates by Age, Period, and
+  Cohort.} {\em Sociological Methodology\/} 20:295--335.
+
+\bibitem[{Wilmoth and Caselli(1987)}]{wilmoth1987simple}
+Wilmoth, J.~R. and G.~Caselli. 1987. \enquote{A simple model for the
+  statistical analysis of large arrays of mortality data: rectangular vs.
+  diagonal structure.} {\em IIASA Working Paper\/} (WP-87-058).
+
+\bibitem[{{World Health Organization}(Downloaded August 21, 2018)}]{whoGHO2018}
+{World Health Organization}. Downloaded August 21, 2018. {\em Global Health
+  Observatory data repository\/}.
+  \url{http://apps.who.int/gho/data/?theme=main&vid=61540}.
+
+\bibitem[{Zaba(1979)}]{zaba1979four}
+Zaba, B. 1979. \enquote{The four-parameter logit life table system.} {\em
+  Population Studies\/} 33(1):79--100.
+
+\end{thebibliography}
