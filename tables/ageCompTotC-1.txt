@@ -1,5 +1,0 @@
-% latex table generated in R 3.5.2 by xtable 1.8-3 package
-% Thu Feb 28 10:14:34 2019
- Female & 11,420.62 & 6,211.12 & 5,209.50 \\ 
-  Male & 12,640.97 & 8,789.03 & 3,851.94 \\ 
-  
