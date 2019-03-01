@@ -23,8 +23,8 @@ This material has been prepared on an Apple Macintosh running Mac OS High Sierra
 
 ## Installing **svdComp5q0** R Package
 * Install and load the **devtools** package
-* Use devtools to install the **svdComp5q0** R package directly from GitHub using this command. Be patient, for whatever reason this sometimes takes a while to run.   
-`install_github(repo = "sinafala/svd-comp", subdir = "package/svdComp5q0")`
+* Use devtools to install the **svdComp5q0** R package directly from GitHub using this command.    
+`install_github(repo = "sinafala/svdComp5q0")`
 
 ## To Run the Markdown File
 * If you're a regular GitHub user, clone the *svd-comp* repository
