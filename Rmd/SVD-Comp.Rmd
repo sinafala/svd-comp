@@ -519,14 +519,22 @@ The following chunk uses the download.hmd() function to downlaod the HMD life ta
 download.result <- download.hmd(
   output.file="../data/HMD/hmd_statistics.zip",
   unzip.dir="../data/HMD/hmd_statistics",
-  hmd.user="sam@samclark.net",
-  hmd.pass="1241662754"
+#################################################################
+##########################  IMPORTANT  ##########################  
+#################################################################
+#   with following two lines commented, this script will use    #
+#    archived HMD and replicate the article                     # 
+#   uncomment following two lines to download and analyse       #
+#    current HMD                                                #
+#################################################################
+  # hmd.user="sam@samclark.net",
+  # hmd.pass="1241662754"
 )
 # if download.hmd() returns an error, then use the local cached copy of the HMD
 if (class(download.result)=="try-error") {
   print(paste("Something went wrong -- usually this means the HMD site is not available.",
               " Using local cached version of HMD instead of a live download.",sep=""))
-  unzip(zipfile="../data/HMD Archive/hmd_statistics.zip",exdir="../data/HMD")
+  unzip(zipfile="../data/HMD Archive/hmd_statistics.zip",exdir="../data/HMD/hmd_statistics")
 } 
 ```
 
@@ -2056,6 +2064,16 @@ e.sum <- ddply(e,.(Sex, `Age (years)`, Model),
 	upper = quantile(Error,0.75)
 )
 
+s.names <- list(
+  'S#1' = expression(bold("Female")),
+  'S#2' = expression(bold("Male"))
+)
+# s.names
+
+s.labeller <- function(variable,value){
+  return(s.names[value])
+}
+
 ggplot(data = e.sum, aes(x=`Age (years)`)) + 
 	geom_boxplot(aes(fill=Model,ymin = ymin,ymax = ymax
 	                 ,middle = middle,upper = upper
@@ -2065,8 +2083,8 @@ ggplot(data = e.sum, aes(x=`Age (years)`)) +
   theme(legend.position="bottom", legend.box = "horizontal") +
 	theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
 	geom_hline(yintercept=0,colour="white",lwd=.2) +
-	facet_wrap(~Sex,ncol=1) +	
-	labs(y="Error")	
+  labs(y = expression(bold("Error")), x = expression(bold("Age (years)"))) +
+	facet_wrap(~Sex,ncol=1,scales="free",labeller=s.labeller) +	
 ggsave("../figures/fig3.pdf",width=6.5,height=6.5,units=c("in"))
 
 # clean up
@@ -2123,13 +2141,13 @@ points(mod.1_0.m$recon.samp$s1[,i],type="l",col="red")
 i.low <- aut.f.1990
 i.high <- swe.f.1751
 tmp.1.m <- cbind(rep("Male",110),rownames(q1logit.m)
-                 ,rep("Sweden 1751",110),"Data",q1logit.m[,i.high])
+                 ,rep("Sweden, 1751",110),"Data",q1logit.m[,i.high])
 tmp.1.f <- cbind(rep("Female",110),rownames(q1logit.m)
-                 ,rep("Sweden 1751",110),"Data",q1logit.f[,i.high])
+                 ,rep("Sweden, 1751",110),"Data",q1logit.f[,i.high])
 tmp.2.m <- cbind(rep("Male",110),rownames(q1logit.m)
-                 ,rep("Austria 1990",110),"Data",q1logit.m[,i.low])
+                 ,rep("Austria, 1990",110),"Data",q1logit.m[,i.low])
 tmp.2.f <- cbind(rep("Female",110),rownames(q1logit.m)
-                 ,rep("Austria 1990",110),"Data",q1logit.f[,i.low])
+                 ,rep("Austria, 1990",110),"Data",q1logit.f[,i.low])
 data.fig1 <- rbind(tmp.1.m,tmp.1.f,tmp.2.m,tmp.2.f)
 
 data.fig1.df <- data.frame(
@@ -2146,13 +2164,13 @@ f.1.p <- mod.1_0.f$recon.samp$s1[,i.high]
 m.2.p <- mod.1_0.m$recon.samp$s1[,i.low]
 f.2.p <- mod.1_0.f$recon.samp$s1[,i.low]
 tmp.1.m <- cbind(rep("Male",110),rownames(q1logit.m)
-                 ,rep("Sweden 1751",110),"Predicted",m.1.p)
+                 ,rep("Sweden, 1751",110),"Predicted",m.1.p)
 tmp.1.f <- cbind(rep("Female",110),rownames(q1logit.m)
-                 ,rep("Sweden 1751",110),"Predicted",f.1.p)
+                 ,rep("Sweden, 1751",110),"Predicted",f.1.p)
 tmp.2.m <- cbind(rep("Male",110),rownames(q1logit.m)
-                 ,rep("Austria 1990",110),"Predicted",m.2.p)
+                 ,rep("Austria, 1990",110),"Predicted",m.2.p)
 tmp.2.f <- cbind(rep("Female",110),rownames(q1logit.m)
-                 ,rep("Austria 1990",110),"Predicted",f.2.p)
+                 ,rep("Austria, 1990",110),"Predicted",f.2.p)
 pred.fig1 <- rbind(tmp.1.m,tmp.1.f,tmp.2.m,tmp.2.f)
 
 pred.fig1.df <- data.frame(
@@ -2171,7 +2189,8 @@ ggplot(data = data.fig1.df, aes(x=Age, y=Value
 	                                   , y=Value, group=interaction(Sex,LT)
 	                                   , colour=Sex), size=1) +
 	scale_x_continuous(breaks=seq(0,110,5)) +
-	labs(y = expression(''[1]*'q'[x]*' (logit scale)'), x = "Age (years)") +
+	labs(y = expression(''[bold(1)]*bolditalic('q')[bolditalic(x)]*bold(' (logit scale)'))
+	     , x = expression(bold("Age (years)"))) +
 	# theme(legend.justification=c(1,0), legend.position=c(0.98,0.02)) +
   theme(legend.position="bottom", legend.box = "horizontal") +
 	scale_shape_discrete(name = "Life Table")
@@ -2267,12 +2286,12 @@ hlines <- data.frame(
 )
 
 u.names <- list(
-	'U#1' = expression('s'[1]*'u'[1]),	
-	'U#2' = expression('s'[2]*'u'[2]),
-	'U#3' = expression('s'[3]*'u'[3]),
-	'U#4' = expression('s'[4]*'u'[4])
+	'U#1' = expression(italic('s')[1]*bold('u')[1]),	
+	'U#2' = expression(italic('s')[2]*bold('u')[2]),
+	'U#3' = expression(italic('s')[3]*bold('u')[3]),
+	'U#4' = expression(italic('s')[4]*bold('u')[4])
 )
-u.names
+# u.names
 
 u.labeller <- function(variable,value){
   return(u.names[value])
@@ -2284,8 +2303,11 @@ ggplot(data = us.df, aes(x=Age, y=Value, group=Sex, colour=Sex)) +
   geom_line(data = us.sm.df, aes(x=Age, y=Value), size=1) +
   geom_hline(data = hlines, aes(yintercept = y)) +
   scale_x_continuous(breaks=seq(0,110,10)) +
+  scale_y_continuous(labels=function(x) format(x, big.mark = ","
+                                               , decimal.mark = ".", scientific = FALSE)) +
   facet_wrap(~U, scales="free", labeller=u.labeller) +
-  labs(y = "Scaled Left Singular Vector Values (logit scale)", x = "Age (years)") +
+  labs(y = expression(bold("Scaled LSV Values (logit scale)"))
+       , x = expression(bold("Age (years)"))) +
   # theme(legend.justification=c(1,0), legend.position=c(0.99,0.56)) 
   theme(legend.position="bottom", legend.box = "horizontal")
 ggsave("../figures/fig2.pdf",width=6.5,height=6.5,units=c("in"))
@@ -2308,7 +2330,7 @@ colnames(esf) <- c("Age","Error","Sample","Sex")
 ensf <- melt(error.age.nsamp.f)
 ensf <- cbind(ensf[,c(1,3)],"Out","Female")
 colnames(ensf) <- c("Age","Error","Sample","Sex")
-rm(list=c("error.age.f","error.age.nsamp.f"))
+# rm(list=c("error.age.f","error.age.nsamp.f"))
 
 ef <- rbind(esf,ensf)
 ef$Age <- factor(ef$Age)
@@ -2322,7 +2344,7 @@ colnames(esm) <- c("Age","Error","Sample","Sex")
 ensm <- melt(error.age.nsamp.m)
 ensm <- cbind(ensm[,c(1,3)],"Out","Male")
 colnames(ensm) <- c("Age","Error","Sample","Sex")
-rm(list=c("error.age.m","error.age.nsamp.m"))
+# rm(list=c("error.age.m","error.age.nsamp.m"))
 
 em <- rbind(esm,ensm)
 em$Age <- factor(em$Age)
@@ -2345,6 +2367,16 @@ e.sum <- ddply(eb,.(Sex, Age, Sample),
 	upper = quantile(Error,0.75)
 )
 
+s.names <- list(
+  'S#1' = expression(bold("Female")),
+  'S#2' = expression(bold("Male"))
+)
+# s.names
+
+s.labeller <- function(variable,value){
+  return(s.names[value])
+}
+
 ggplot(data = e.sum, aes(x=Age)) + 
 	geom_boxplot(aes(fill=Sample
 	                 ,ymin = ymin,ymax = ymax
@@ -2356,8 +2388,9 @@ ggplot(data = e.sum, aes(x=Age)) +
 	scale_x_discrete(breaks=seq(0,110,10)) +
 	# theme(legend.justification=c(1,0), legend.position=c(.15,0.02)) +
   theme(legend.position="bottom", legend.box = "horizontal") +
-	facet_wrap(~Sex, ncol=1) +	
-	labs(x="Age (years)", y="Error")	
+	# facet_wrap(~Sex, ncol=1) +	
+	facet_wrap(~Sex, ncol=1, scales="free", labeller=s.labeller) +	
+	labs(x=expression(bold("Age (years)")), y=expression(bold("Error")))	
 ggsave("../figures/fig4.pdf",width=6.5,height=6.5,units=c("in"))
 
 # clean up
@@ -2438,6 +2471,16 @@ e.sum <- ddply(es.df,.(Sex, Sample, Fraction),
 	upper = quantile(Median,0.75)
 )
 
+s.names <- list(
+  'S#1' = expression(bold("Female")),
+  'S#2' = expression(bold("Male"))
+)
+# s.names
+
+s.labeller <- function(variable,value){
+  return(s.names[value])
+}
+
 ggplot(data = e.sum, aes(x=Fraction)) + 
 	geom_boxplot(aes(fill=Sample
 	                 ,ymin = ymin
@@ -2449,10 +2492,11 @@ ggplot(data = e.sum, aes(x=Fraction)) +
   # scale_y_continuous(limits = c(-2e-05,4.5e-05)) +
 	# theme(legend.justification=c(1,0), legend.position=c(0.85,.56)) +
   theme(legend.position="bottom", legend.box = "horizontal") +
-	labs(y = "Median Error", x = "Sample Fraction") +
-	facet_wrap(~Sex,ncol=1,scale="free") +
-	labs(y="Median Error")	
+	labs(y = expression(bold("Median Error"))
+	     , x = expression(bold("Sample Percentage"))) +
+	facet_wrap(~Sex,ncol=1,scales="free",labeller=s.labeller)
 ggsave("../figures/fig5a.pdf",width=6.5,height=6.5,units=c("in"))
+
 
 # iqrs
 # female
@@ -2535,9 +2579,9 @@ ggplot(data = e.sum, aes(x=Fraction)) +
   # scale_y_continuous(limits = c(0.0025,0.005)) +
 	# theme(legend.justification=c(1,0), legend.position=c(0.85,.84)) +
   theme(legend.position="bottom", legend.box = "horizontal") +
-	labs(y = "Median Error", x = "Sample Fraction") +
-	facet_wrap(~Sex,ncol=1,scale="free") +
-	labs(y="Error Interquartile Range")	
+	labs(y = expression(bold("Error Interquartile Range"))
+	     , x = expression(bold("Sample Percentage"))) +
+	facet_wrap(~Sex,ncol=1,scales="free",labeller=s.labeller)
 ggsave("../figures/fig5b.pdf",width=6.5,height=6.5,units=c("in"))
 
 # clean up
@@ -2593,10 +2637,10 @@ vs.cm.p.df <- data.frame(
 # str(vs.cm.p.df)
 
 v.names <- list(
-	'V#1' = expression('v'[1]),	
-	'V#2' = expression('v'[2]),
-	'V#3' = expression('v'[3]),
-	'V#4' = expression('v'[4])
+	'V#1' = expression(bold('v')[1]),	
+	'V#2' = expression(bold('v')[2]),
+	'V#3' = expression(bold('v')[3]),
+	'V#4' = expression(bold('v')[4])
 )
 
 v.labeller <- function(variable,value){
@@ -2613,8 +2657,9 @@ vs.cm <- rbind(
 ggplot(data = vs.cm[which(vs.cm[,1]=="Female"),]
        , aes(x=CM, y=Value, group=Type, colour=Type)) + 
 	geom_point(size=0.2) + 
-	labs(y = "Right Singular Vector Element Values"
-	     , x = expression('Child Morality '[5]*'q'[0]*' (logit scale)')) +
+	labs(y = expression(bold("RSV Element Values"))
+	     , x = expression(bold('Child Mortality ')
+	                      [bold(5)]*bolditalic('q')[bold(0)]*bold(' (logit scale)'))) +
 	# theme(legend.justification=c(1,0), legend.position=c(0.99,.88)) +
   theme(legend.position="bottom", legend.box = "horizontal") +
 	theme(legend.title=element_blank()) +
@@ -2625,8 +2670,9 @@ ggsave("../figures/fig2-1f.pdf",width=6.5,height=6.5,units=c("in"))
 ggplot(data = vs.cm[which(vs.cm[,1]=="Male"),]
        , aes(x=CM, y=Value, group=Type, colour=Type)) + 
 	geom_point(size=0.2) + 
-	labs(y = "Right Singular Vector Elemeent Values"
-	     , x = expression('Child Morality '[5]*'q'[0]*' (logit scale)')) +
+	labs(y = expression(bold("RSV Element Values"))
+	     , x = expression(bold('Child Mortality ')
+	                      [bold(5)]*bolditalic('q')[bold(0)]*bold(' (logit scale)'))) +
 	# theme(legend.justification=c(1,0), legend.position=c(0.99,.88)) +
   theme(legend.position="bottom", legend.box = "horizontal") +
 	theme(legend.title=element_blank()) +
@@ -2673,14 +2719,26 @@ am.cm <- rbind(
 )
 # str(am.cm)
 
+s.names <- list(
+  'S#1' = expression(bold("Female")),
+  'S#2' = expression(bold("Male"))
+)
+# s.names
+
+s.labeller <- function(variable,value){
+  return(s.names[value])
+}
+
 ggplot(data = am.cm, aes(x=CM, y=AM, group=Type, colour=Type)) + 
 	geom_point(size=0.2) +
-	labs(y = expression('Adult Morality '[45]*'q'[15]*' (logit scale)')
-	     , x = expression('Child Morality '[5]*'q'[0]*' (logit scale)')) +
+	labs(y = expression(bold('Adult Mortality ')
+	                    [bold(45)]*bolditalic('q')[bold(15)]*bold(' (logit scale)'))
+	     , x = expression(bold('Child Mortality ')
+	                      [bold(5)]*bolditalic('q')[bold(0)]*bold(' (logit scale)'))) +
 	# theme(legend.justification=c(1,0), legend.position=c(0.99,0.02)) +
   theme(legend.position="bottom", legend.box = "horizontal") +
 	theme(legend.title=element_blank()) +
-	facet_wrap(~Sex, scale="free")
+	facet_wrap(~Sex, scale="free", labeller=s.labeller)
 ggsave("../figures/fig2-2.pdf",width=6.5,height=6.5,units=c("in"))
 
 # clean up
@@ -2733,14 +2791,25 @@ q0 <- rbind(
 q0[,1] <- factor(q0[,1], levels=c("Female","Male"))
 # str(q0)
 
+s.names <- list(
+  'S#1' = expression(bold("Female")),
+  'S#2' = expression(bold("Male"))
+)
+# s.names
+
+s.labeller <- function(variable,value){
+  return(s.names[value])
+}
+
 ggplot(data = q0, aes(x=CM, y=q0, group=Type, colour=Type)) + 
 	geom_point(size=0.2) +
-	labs(y = expression(''[1]*'q'[0]*' (logit scale)')
-	     , x = expression('Child Morality '[5]*'q'[0]*' (logit scale)')) +
+	labs(y = expression(''[bold(1)]*bolditalic('q')[0]*bold(' (logit scale)'))
+	     , x = expression(bold('Child Mortality ')
+	                      [bold(5)]*bolditalic('q')[bold(0)]*bold(' (logit scale)'))) +
 	# theme(legend.justification=c(1,0), legend.position=c(0.99,0.02)) +
   theme(legend.position="bottom", legend.box = "horizontal") +
 	theme(legend.title=element_blank()) +
-	facet_wrap(~Sex, scale="free") 
+	facet_wrap(~Sex, scale="free", labeller=s.labeller) 
 ggsave("../figures/fig2-3.pdf",width=6.5,height=6.5,units=c("in"))
 
 # clean up
@@ -2782,7 +2851,9 @@ ggplot(data = lt.p.df, aes(x=Age, y=ql
 	geom_line() +
   geom_point(data = lt.p.df[seq(1, nrow(lt.p.df), 5),],size=2) +
   scale_x_continuous(breaks=c(seq(0,110,5))) +
-	labs(y = expression('Predicted '[1]*'q'[x]*' (logit scale)'), x = "Age (years)") +
+	labs(y = expression(bold('Predicted ')
+	                    [bold(1)]*bolditalic('q')[bolditalic(x)]*bold(' (logit scale)'))
+	     , x = expression(bold("Age (years)"))) +
 	# theme(legend.justification=c(1,0), legend.position=c(0.95,0.05)) + 
   theme(legend.position="bottom", legend.box = "horizontal") +
 	scale_shape_discrete(name = expression('logit('[5]*'q'[0]*')'))
@@ -2849,10 +2920,33 @@ parse.countries <- function(file.name) {
 files <- Sys.glob("../data/HMD/hmd_statistics/lt_female/fltper_5x1/*")
 # files
 
+# # make a list of country abbreviations and their full names
+# country.names <- list()
+# for (i in 1:length(files)) {
+#   country.names[[i]] <- c(strsplit(basename(files[i]),"\\.")[[1]][1]
+#                             ,parse.countries(files[[i]]))
+# }
+# # have a look at the list of full country names
+# # country.names
+
 # make a list of country abbreviations and their full names
 country.names <- list()
 for (i in 1:length(files)) {
-  country.names[[i]] <- c(strsplit(basename(files[i]),"\\.")[[1]][1],parse.countries(files[[i]]))
+  country.names[[i]] <- c(strsplit(basename(files[i])
+                                   ,"\\.")[[1]][1],parse.countries(files[[i]]))
+  # 'by hand' correction to full country names
+  if (country.names[[i]][1] == "GBRTENW") {
+    country.names[[i]][2] <- "England and Wales -- Total Population"
+  }
+  if (country.names[[i]][1] == "GBRCENW") {
+    country.names[[i]][2] <- "England and Wales -- Civilian National Population"
+  }
+  if (country.names[[i]][1] == "FRACNP") {
+    country.names[[i]][2] <- "France -- Civilian Population"
+  }
+  if (country.names[[i]][1] == "FRATNP") {
+    country.names[[i]][2] <- "France -- Total Population"
+  }
 }
 # have a look at the list of full country names
 # country.names
@@ -2907,10 +3001,12 @@ print.xtable(xtable(lts.print,booktabs=TRUE,digits=0)
 )
 
 # save the number of life tables for each sex
-capture.output(file="../tables/LTtot.txt",cat(format(ltGrandTot, nsmall=0, big.mark=",")))
+capture.output(file="../tables/LTtot.txt"
+               ,cat(format(ltGrandTot, nsmall=0, big.mark=",")))
 
 # save the number of life tables for both sexes
-capture.output(file="../tables/LTtotBoth.txt",cat(format(2*ltGrandTot, nsmall=0, big.mark=",")))
+capture.output(file="../tables/LTtotBoth.txt"
+               ,cat(format(2*ltGrandTot, nsmall=0, big.mark=",")))
 
 # save the download date
 capture.output(file="../tables/HMDdate.txt",cat(download.date))
@@ -2921,9 +3017,11 @@ print(paste("Total number of life tables in raw data (q1.f):"
 print(paste("Check, totalling up country counts of life tables:",ltGrandTot))
 
 print("")
-print("Two hand corrections")
+print("Four 'by-hand' corrections")
 print("GBRTENW: England and Wales - Total Population")
 print("GBRCENW: England and Wales - Civilian National Population")
+print("FRACNP: France - Civilian Population")
+print("FRATNP: France - Total Population")
 
 rm(list=c("country","year","files","i","j","index"))
 ```
@@ -2963,7 +3061,7 @@ capture.output(file="../tables/ssFullMale.txt",
 cat(paste(paste(ss.m[1:3],collapse=", "),sep=""),", and ",ss.m[4],sep="")
 )
 capture.output(file="../tables/ssFullMaleTotal.txt",
-cat(ss.1to4.f)
+cat(ss.1to4.m)
 )
 
 # calculate fractions of 2+ component ss explained by 
@@ -2978,7 +3076,8 @@ ss.2plus.f <- c(ss.2plus.2.f,ss.2plus.3.f,ss.2plus.4.f)
 ss.2plus.format.f <- format(round(ss.2plus.f,6),format="d")
 ss.2plus.tot.f <- format(round(sum(ss.2plus.f),6),format="d")
 capture.output(file="../tables/ssFemale.txt",
-cat(paste(paste(ss.2plus.format.f[1:2],collapse=", "),sep=""),", and ",ss.2plus.format.f[3],sep="")
+cat(paste(paste(ss.2plus.format.f[1:2],collapse=", ")
+          ,sep=""),", and ",ss.2plus.format.f[3],sep="")
 )
 capture.output(file="../tables/ssFemaleTotal.txt",
 cat(ss.2plus.tot.f)
@@ -2993,7 +3092,8 @@ ss.2plus.format.m <- format(round(ss.2plus.m,6),format="d")
 ss.2plus.tot.m <- format(round(sum(ss.2plus.m),6),format="d")
 # write the line for males
 capture.output(file="../tables/ssMale.txt",
-cat(paste(paste(ss.2plus.format.m[1:2],collapse=", "),sep=""),", and ",ss.2plus.format.m[3],sep="")
+cat(paste(paste(ss.2plus.format.m[1:2],collapse=", ")
+          ,sep=""),", and ",ss.2plus.format.m[3],sep="")
 )
 capture.output(file="../tables/ssMaleTotal.txt",
 cat(ss.2plus.tot.m)
@@ -3709,17 +3809,17 @@ q.logit.pred <- data.frame(rbind(
   ,cbind(c(0,1,seq(5,80,5))
          ,logit(mex.m.p5.ca)[1:18],"Mexico","Male","Predicted by SVD-Comp")
   ,cbind(c(0,1,seq(5,80,5))
-         ,logit(mex.f.LQp.ca)[1:18],"Mexico","Female","Predicted by Log Quad")
+         ,logit(mex.f.LQp.ca)[1:18],"Mexico","Female","Predicted by Log-Quad")
   ,cbind(c(0,1,seq(5,80,5))
-         ,logit(mex.m.LQp.ca)[1:18],"Mexico","Male","Predicted by Log Quad")
+         ,logit(mex.m.LQp.ca)[1:18],"Mexico","Male","Predicted by Log-Quad")
   ,cbind(c(0,1,seq(5,80,5))
          ,logit(rsa.f.p5.ca)[1:18],"South Africa","Female","Predicted by SVD-Comp")
   ,cbind(c(0,1,seq(5,80,5))
          ,logit(rsa.m.p5.ca)[1:18],"South Africa","Male","Predicted by SVD-Comp")
   ,cbind(c(0,1,seq(5,80,5))
-         ,logit(rsa.f.LQp.ca)[1:18],"South Africa","Female","Predicted by Log Quad")
+         ,logit(rsa.f.LQp.ca)[1:18],"South Africa","Female","Predicted by Log-Quad")
   ,cbind(c(0,1,seq(5,80,5))
-         ,logit(rsa.m.LQp.ca)[1:18],"South Africa","Male","Predicted by Log Quad")
+         ,logit(rsa.m.LQp.ca)[1:18],"South Africa","Male","Predicted by Log-Quad")
 ))
 colnames(q.logit.pred) <- c("Age","Value","Country","Sex","Source")
 rownames(q.logit.pred) <- seq(1,18*8,1)
@@ -3737,11 +3837,13 @@ ggplot(data = q.logit.data, aes(x=Age, y=Value, colour=Source)) +
   theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
   geom_point(size=1.5) +
   # geom_line(aes(x=Age, y=Value, colour=Source), size=0.5) +
-	labs(y = expression(''[n]*'q'[x]*' (logit scale)'), x = "Age (years)") +
-  facet_wrap(~interaction(Sex,Country,sep=" - "),ncol=2) +
+	labs(y = expression(''[bolditalic(n)]*bolditalic('q')[bolditalic(x)]*bold(' (logit scale)'))
+	     , x = expression(bold("Age (years)"))) +
+  facet_wrap(~interaction(Sex,Country,sep=", "),ncol=2) +
   # facet_wrap(~Sex + Country,ncol=2) +
 	theme(legend.title=element_blank(),legend.position=c(.15,.91)) + 
-  theme(legend.position="bottom", legend.box = "horizontal")
+  theme(legend.position="bottom", legend.box = "horizontal") + 
+  theme(strip.text = element_text(face="bold"))
 ggsave("../figures/fig7.pdf",width=6.5,height=6.5,units=c("in"))
 ```
 
