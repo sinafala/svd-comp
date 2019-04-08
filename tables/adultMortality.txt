@@ -1,6 +1,6 @@
 
 % Table created by stargazer v.5.2 by Marek Hlavac, Harvard University. E-mail: hlavac at fas.harvard.edu
-% Date and time: Sat, Apr 06, 2019 - 12:04:42
+% Date and time: Mon, Apr 08, 2019 - 14:07:27
 \begin{table}[!htbp] \centering 
   \caption{Adult Mortality Models: $\logit(\qff)_{z \ell} = f(\qf_{\, z \ell})$} 
   \label{tab:appA:adultMxMod} 

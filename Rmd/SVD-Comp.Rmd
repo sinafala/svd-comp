@@ -2,7 +2,7 @@
 title: "SVD Component Mortality Model"
 subtitle: "Reproducibility Materials: Data and Code"
 author: "Samuel J. Clark"
-date: "2018-11"
+date: "2015-2019"
 output:
   bookdown::pdf_document2
 ---
@@ -2087,6 +2087,22 @@ ggplot(data = e.sum, aes(x=`Age (years)`)) +
 	facet_wrap(~Sex,ncol=1,scales="free",labeller=s.labeller) +	
 ggsave("../figures/fig3.pdf",width=6.5,height=6.5,units=c("in"))
 
+# grayscale
+ggplot(data = e.sum, aes(x=`Age (years)`)) + 
+	geom_boxplot(aes(fill=Model,ymin = ymin,ymax = ymax
+	                 ,middle = middle,upper = upper
+	                 ,lower= lower),stat='identity',size=0.2) +
+	scale_y_continuous(limits = c(-0.08,0.08)) +
+	# theme(legend.justification=c(1,0), legend.position=c(.22,0.02)) +
+  theme_bw() +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+	theme(axis.text.x = element_text(angle = 60, hjust = 1),) +
+	geom_hline(yintercept=0,colour="white",lwd=.2) +
+  labs(y = expression(bold("Error")), x = expression(bold("Age (years)"))) +
+	facet_wrap(~Sex,ncol=1,scales="free",labeller=s.labeller) +	
+  scale_fill_grey(start = 0.4, end = .7) +
+ggsave("../figures/fig3-BW.pdf",width=6.5,height=6.5,units=c("in"))
+
 # clean up
 rm(list=c("e.sum","e","efn","emn","em","elm","ecm","ef","elf","ecf"))
 ```
@@ -2193,8 +2209,25 @@ ggplot(data = data.fig1.df, aes(x=Age, y=Value
 	     , x = expression(bold("Age (years)"))) +
 	# theme(legend.justification=c(1,0), legend.position=c(0.98,0.02)) +
   theme(legend.position="bottom", legend.box = "horizontal") +
-	scale_shape_discrete(name = "Life Table")
+	scale_shape_discrete(name = "Life Table") +
 ggsave("../figures/fig1.pdf",width=6.5,height=6.5,units=c("in"))
+
+# grayscale
+ggplot(data = data.fig1.df, aes(x=Age, y=Value
+                                , group=interaction(Sex,LT), colour=Sex, shape=LT)) +
+	geom_point(size=1.5) +
+	geom_line(data = pred.fig1.df, aes(x=Age
+	                                   , y=Value, group=interaction(Sex,LT)
+	                                   , colour=Sex), size=1) +
+	scale_x_continuous(breaks=seq(0,110,5)) +
+	labs(y = expression(''[bold(1)]*bolditalic('q')[bolditalic(x)]*bold(' (logit scale)'))
+	     , x = expression(bold("Age (years)"))) +
+	# theme(legend.justification=c(1,0), legend.position=c(0.98,0.02)) +
+  theme_bw() +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+	scale_shape_discrete(name = "Life Table") +
+  scale_colour_grey(start = 0, end = .7) + 
+ggsave("../figures/fig1-BW.pdf",width=6.5,height=6.5,units=c("in"))
 
 # clean up
 rm(list=c("pred.fig1.df","pred.fig1","tmp.2.f","tmp.2.m","tmp.1.f","tmp.1.m"
@@ -2309,8 +2342,25 @@ ggplot(data = us.df, aes(x=Age, y=Value, group=Sex, colour=Sex)) +
   labs(y = expression(bold("Scaled LSV Values (logit scale)"))
        , x = expression(bold("Age (years)"))) +
   # theme(legend.justification=c(1,0), legend.position=c(0.99,0.56)) 
-  theme(legend.position="bottom", legend.box = "horizontal")
+  theme(legend.position="bottom", legend.box = "horizontal") +
 ggsave("../figures/fig2.pdf",width=6.5,height=6.5,units=c("in"))
+
+# grayscale
+ggplot(data = us.df, aes(x=Age, y=Value, group=Sex, colour=Sex)) +
+  geom_line() + 
+  geom_line(data = us.sm.df, aes(x=Age, y=Value), size=1) +
+  geom_hline(data = hlines, aes(yintercept = y)) +
+  scale_x_continuous(breaks=seq(0,110,10)) +
+  scale_y_continuous(labels=function(x) format(x, big.mark = ","
+                                               , decimal.mark = ".", scientific = FALSE)) +
+  facet_wrap(~U, scales="free", labeller=u.labeller) +
+  labs(y = expression(bold("Scaled LSV Values (logit scale)"))
+       , x = expression(bold("Age (years)"))) +
+  # theme(legend.justification=c(1,0), legend.position=c(0.99,0.56)) 
+  theme_bw() +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+  scale_colour_grey(start = 0, end = .7) + 
+ggsave("../figures/fig2-BW.pdf",width=6.5,height=6.5,units=c("in"))
 
 # clean up
 rm(list=c("u.labeller","u.names","hlines","us.sm.df","us.sm","u4.sm.f"
@@ -2377,6 +2427,7 @@ s.labeller <- function(variable,value){
   return(s.names[value])
 }
 
+# Plot
 ggplot(data = e.sum, aes(x=Age)) + 
 	geom_boxplot(aes(fill=Sample
 	                 ,ymin = ymin,ymax = ymax
@@ -2390,8 +2441,27 @@ ggplot(data = e.sum, aes(x=Age)) +
   theme(legend.position="bottom", legend.box = "horizontal") +
 	# facet_wrap(~Sex, ncol=1) +	
 	facet_wrap(~Sex, ncol=1, scales="free", labeller=s.labeller) +	
-	labs(x=expression(bold("Age (years)")), y=expression(bold("Error")))	
+	labs(x=expression(bold("Age (years)")), y=expression(bold("Error"))) +	
 ggsave("../figures/fig4.pdf",width=6.5,height=6.5,units=c("in"))
+
+# grayscale
+ggplot(data = e.sum, aes(x=Age)) + 
+	geom_boxplot(aes(fill=Sample
+	                 ,ymin = ymin,ymax = ymax
+	                 ,middle = middle
+	                 ,upper = upper
+	                 ,lower=lower)
+	             ,stat='identity',size=0.2) +
+	# scale_y_continuous(limits = c(-0.03,0.03)) +
+	scale_x_discrete(breaks=seq(0,110,10)) +
+	# theme(legend.justification=c(1,0), legend.position=c(.15,0.02)) +
+  theme_bw() +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+	# facet_wrap(~Sex, ncol=1) +	
+	facet_wrap(~Sex, ncol=1, scales="free", labeller=s.labeller) +	
+	labs(x=expression(bold("Age (years)")), y=expression(bold("Error"))) +	
+  scale_fill_grey(start = 0.4, end = .7) +
+ggsave("../figures/fig4-BW.pdf",width=6.5,height=6.5,units=c("in"))
 
 # clean up
 rm(list=c("e.sum","eb","mod.0_5.50.f","mod.0_5.50.m"))
@@ -2481,6 +2551,7 @@ s.labeller <- function(variable,value){
   return(s.names[value])
 }
 
+# Plot
 ggplot(data = e.sum, aes(x=Fraction)) + 
 	geom_boxplot(aes(fill=Sample
 	                 ,ymin = ymin
@@ -2494,8 +2565,27 @@ ggplot(data = e.sum, aes(x=Fraction)) +
   theme(legend.position="bottom", legend.box = "horizontal") +
 	labs(y = expression(bold("Median Error"))
 	     , x = expression(bold("Sample Percentage"))) +
-	facet_wrap(~Sex,ncol=1,scales="free",labeller=s.labeller)
+	facet_wrap(~Sex,ncol=1,scales="free",labeller=s.labeller) +
 ggsave("../figures/fig5a.pdf",width=6.5,height=6.5,units=c("in"))
+
+# grayscale
+ggplot(data = e.sum, aes(x=Fraction)) + 
+	geom_boxplot(aes(fill=Sample
+	                 ,ymin = ymin
+	                 ,ymax = ymax
+	                 ,middle = middle
+	                 ,upper = upper
+	                 ,lower=lower),stat='identity',size=0.2) +
+  geom_hline(yintercept=0) +
+  # scale_y_continuous(limits = c(-2e-05,4.5e-05)) +
+	# theme(legend.justification=c(1,0), legend.position=c(0.85,.56)) +
+  theme_bw() +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+	labs(y = expression(bold("Median Error"))
+	     , x = expression(bold("Sample Percentage"))) +
+	facet_wrap(~Sex,ncol=1,scales="free",labeller=s.labeller) +
+  scale_fill_grey(start = 0.4, end = .7) +
+ggsave("../figures/fig5a-BW.pdf",width=6.5,height=6.5,units=c("in"))
 
 
 # iqrs
@@ -2568,6 +2658,7 @@ e.sum <- ddply(es.df,.(Sex, Sample, Fraction),
 	upper = quantile(Median,0.75)
 )
 
+# Plot
 ggplot(data = e.sum, aes(x=Fraction)) + 
 	geom_boxplot(aes(fill=Sample
 	                 ,ymin = ymin
@@ -2581,8 +2672,27 @@ ggplot(data = e.sum, aes(x=Fraction)) +
   theme(legend.position="bottom", legend.box = "horizontal") +
 	labs(y = expression(bold("Error Interquartile Range"))
 	     , x = expression(bold("Sample Percentage"))) +
-	facet_wrap(~Sex,ncol=1,scales="free",labeller=s.labeller)
+	facet_wrap(~Sex,ncol=1,scales="free",labeller=s.labeller) +
 ggsave("../figures/fig5b.pdf",width=6.5,height=6.5,units=c("in"))
+
+# grayscale
+ggplot(data = e.sum, aes(x=Fraction)) + 
+	geom_boxplot(aes(fill=Sample
+	                 ,ymin = ymin
+	                 ,ymax = ymax
+	                 ,middle = middle
+	                 ,upper = upper
+	                 ,lower=lower),stat='identity',size=0.2) +
+  # geom_hline(yintercept=0) +
+  # scale_y_continuous(limits = c(0.0025,0.005)) +
+	# theme(legend.justification=c(1,0), legend.position=c(0.85,.84)) +
+  theme_bw() +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+	labs(y = expression(bold("Error Interquartile Range"))
+	     , x = expression(bold("Sample Percentage"))) +
+	facet_wrap(~Sex,ncol=1,scales="free",labeller=s.labeller) +
+  scale_fill_grey(start = 0.4, end = .7) +
+ggsave("../figures/fig5b-BW.pdf",width=6.5,height=6.5,units=c("in"))
 
 # clean up
 rm(list=c("e.sum","es.df","es.m.df","es.m","es.ns.m"
@@ -2653,7 +2763,7 @@ vs.cm <- rbind(
 )
 # str(vs.cm)
 
-# female
+# Plot female
 ggplot(data = vs.cm[which(vs.cm[,1]=="Female"),]
        , aes(x=CM, y=Value, group=Type, colour=Type)) + 
 	geom_point(size=0.2) + 
@@ -2663,10 +2773,39 @@ ggplot(data = vs.cm[which(vs.cm[,1]=="Female"),]
 	# theme(legend.justification=c(1,0), legend.position=c(0.99,.88)) +
   theme(legend.position="bottom", legend.box = "horizontal") +
 	theme(legend.title=element_blank()) +
-	facet_wrap(~V, scale="free", labeller=v.labeller)
+	facet_wrap(~V, scale="free", labeller=v.labeller) +
 ggsave("../figures/fig2-1f.pdf",width=6.5,height=6.5,units=c("in"))
 
-# male  
+# grayscale
+ggplot(data = vs.cm[which(vs.cm[,1]=="Female"),]
+       , aes(x=CM, y=Value, group=Type, colour=Type)) + 
+	geom_point(size=0.2) + 
+	labs(y = expression(bold("RSV Element Values"))
+	     , x = expression(bold('Child Mortality ')
+	                      [bold(5)]*bolditalic('q')[bold(0)]*bold(' (logit scale)'))) +
+	# theme(legend.justification=c(1,0), legend.position=c(0.99,.88)) +
+  theme_bw() +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+	theme(legend.title=element_blank()) +
+	facet_wrap(~V, scale="free", labeller=v.labeller) +
+  scale_colour_grey(start = 0, end = .7) + 
+ggsave("../figures/fig2-1f-BW.pdf",width=6.5,height=6.5,units=c("in"))
+
+# Plot male  
+ggplot(data = vs.cm[which(vs.cm[,1]=="Male"),]
+       , aes(x=CM, y=Value, group=Type, colour=Type)) + 
+	geom_point(size=0.2) + 
+	labs(y = expression(bold("RSV Element Values"))
+	     , x = expression(bold('Child Mortality ')
+	                      [bold(5)]*bolditalic('q')[bold(0)]*bold(' (logit scale)'))) +
+	# theme(legend.justification=c(1,0), legend.position=c(0.99,.88)) +
+  theme_bw() +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+	theme(legend.title=element_blank()) +
+	facet_wrap(~V, scale="free", labeller=v.labeller) +
+ggsave("../figures/fig2-1m.pdf",width=6.5,height=6.5,units=c("in"))
+
+# grayscale
 ggplot(data = vs.cm[which(vs.cm[,1]=="Male"),]
        , aes(x=CM, y=Value, group=Type, colour=Type)) + 
 	geom_point(size=0.2) + 
@@ -2676,8 +2815,9 @@ ggplot(data = vs.cm[which(vs.cm[,1]=="Male"),]
 	# theme(legend.justification=c(1,0), legend.position=c(0.99,.88)) +
   theme(legend.position="bottom", legend.box = "horizontal") +
 	theme(legend.title=element_blank()) +
-	facet_wrap(~V, scale="free", labeller=v.labeller)
-ggsave("../figures/fig2-1m.pdf",width=6.5,height=6.5,units=c("in"))
+	facet_wrap(~V, scale="free", labeller=v.labeller) +
+  scale_colour_grey(start = 0, end = .7) + 
+ggsave("../figures/fig2-1m-BW.pdf",width=6.5,height=6.5,units=c("in"))
 
 # clean up
 rm(list=c("vs.cm","v.labeller","v.names"
@@ -2729,6 +2869,7 @@ s.labeller <- function(variable,value){
   return(s.names[value])
 }
 
+# Plot
 ggplot(data = am.cm, aes(x=CM, y=AM, group=Type, colour=Type)) + 
 	geom_point(size=0.2) +
 	labs(y = expression(bold('Adult Mortality ')
@@ -2738,8 +2879,23 @@ ggplot(data = am.cm, aes(x=CM, y=AM, group=Type, colour=Type)) +
 	# theme(legend.justification=c(1,0), legend.position=c(0.99,0.02)) +
   theme(legend.position="bottom", legend.box = "horizontal") +
 	theme(legend.title=element_blank()) +
-	facet_wrap(~Sex, scale="free", labeller=s.labeller)
+	facet_wrap(~Sex, scale="free", labeller=s.labeller) +
 ggsave("../figures/fig2-2.pdf",width=6.5,height=6.5,units=c("in"))
+
+# grayscale
+ggplot(data = am.cm, aes(x=CM, y=AM, group=Type, colour=Type)) + 
+	geom_point(size=0.2) +
+	labs(y = expression(bold('Adult Mortality ')
+	                    [bold(45)]*bolditalic('q')[bold(15)]*bold(' (logit scale)'))
+	     , x = expression(bold('Child Mortality ')
+	                      [bold(5)]*bolditalic('q')[bold(0)]*bold(' (logit scale)'))) +
+	# theme(legend.justification=c(1,0), legend.position=c(0.99,0.02)) +
+  theme_bw() +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+	theme(legend.title=element_blank()) +
+	facet_wrap(~Sex, scale="free", labeller=s.labeller) +
+  scale_colour_grey(start = 0, end = .7) + 
+ggsave("../figures/fig2-2-BW.pdf",width=6.5,height=6.5,units=c("in"))
 
 # clean up
 rm(list=c("am.cm","am.cm.p.df","am.cm.p","am.cm.df"))
@@ -2801,6 +2957,7 @@ s.labeller <- function(variable,value){
   return(s.names[value])
 }
 
+# Plot
 ggplot(data = q0, aes(x=CM, y=q0, group=Type, colour=Type)) + 
 	geom_point(size=0.2) +
 	labs(y = expression(''[bold(1)]*bolditalic('q')[0]*bold(' (logit scale)'))
@@ -2809,8 +2966,22 @@ ggplot(data = q0, aes(x=CM, y=q0, group=Type, colour=Type)) +
 	# theme(legend.justification=c(1,0), legend.position=c(0.99,0.02)) +
   theme(legend.position="bottom", legend.box = "horizontal") +
 	theme(legend.title=element_blank()) +
-	facet_wrap(~Sex, scale="free", labeller=s.labeller) 
+	facet_wrap(~Sex, scale="free", labeller=s.labeller) +
 ggsave("../figures/fig2-3.pdf",width=6.5,height=6.5,units=c("in"))
+
+# grayscale
+ggplot(data = q0, aes(x=CM, y=q0, group=Type, colour=Type)) + 
+	geom_point(size=0.2) +
+	labs(y = expression(''[bold(1)]*bolditalic('q')[0]*bold(' (logit scale)'))
+	     , x = expression(bold('Child Mortality ')
+	                      [bold(5)]*bolditalic('q')[bold(0)]*bold(' (logit scale)'))) +
+	# theme(legend.justification=c(1,0), legend.position=c(0.99,0.02)) +
+  theme_bw() +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+	theme(legend.title=element_blank()) +
+	facet_wrap(~Sex, scale="free", labeller=s.labeller) +
+  scale_colour_grey(start = 0, end = .7) + 
+ggsave("../figures/fig2-3-BW.pdf",width=6.5,height=6.5,units=c("in"))
 
 # clean up
 rm(list=c("q0","q0.cm.p.df","q0.cm.f.p"
@@ -2846,6 +3017,7 @@ lt.p.df <- data.frame(
 )
 # str(lt.p.df)
 
+# Plot
 ggplot(data = lt.p.df, aes(x=Age, y=ql
                            , group=interaction(Sex,cml), colour=Sex, shape=cml)) +
 	geom_line() +
@@ -2856,8 +3028,24 @@ ggplot(data = lt.p.df, aes(x=Age, y=ql
 	     , x = expression(bold("Age (years)"))) +
 	# theme(legend.justification=c(1,0), legend.position=c(0.95,0.05)) + 
   theme(legend.position="bottom", legend.box = "horizontal") +
-	scale_shape_discrete(name = expression('logit('[5]*'q'[0]*')'))
+	scale_shape_discrete(name = expression('logit('[5]*'q'[0]*')')) +
 ggsave("../figures/fig6.pdf",width=6.5,height=6.5,units=c("in"))
+
+# Plot
+ggplot(data = lt.p.df, aes(x=Age, y=ql
+                           , group=interaction(Sex,cml), colour=Sex, shape=cml)) +
+	geom_line() +
+  geom_point(data = lt.p.df[seq(1, nrow(lt.p.df), 5),],size=2) +
+  scale_x_continuous(breaks=c(seq(0,110,5))) +
+	labs(y = expression(bold('Predicted ')
+	                    [bold(1)]*bolditalic('q')[bolditalic(x)]*bold(' (logit scale)'))
+	     , x = expression(bold("Age (years)"))) +
+	# theme(legend.justification=c(1,0), legend.position=c(0.95,0.05)) + 
+  theme_bw() +
+  theme(legend.position="bottom", legend.box = "horizontal") +
+	scale_shape_discrete(name = expression('logit('[5]*'q'[0]*')')) +
+  scale_colour_grey(start = 0, end = .7) + 
+ggsave("../figures/fig6-BW.pdf",width=6.5,height=6.5,units=c("in"))
 
 # clean up
 rm(list=c("lt.p.df","lt.p","lt.m","lt.f","cml.input"))
@@ -3827,7 +4015,6 @@ q.logit.pred$Age <- as.numeric(as.character(q.logit.pred$Age))
 q.logit.pred$Value <- as.numeric(as.character(q.logit.pred$Value))
 q.logit.pred
 
-
 # plot data and predictions
 ggplot(data = q.logit.data, aes(x=Age, y=Value, colour=Source)) +
   geom_line(data = q.logit.pred, aes(x=Age, y=Value, colour=Source), size=1) + 
@@ -3843,8 +4030,29 @@ ggplot(data = q.logit.data, aes(x=Age, y=Value, colour=Source)) +
   # facet_wrap(~Sex + Country,ncol=2) +
 	theme(legend.title=element_blank(),legend.position=c(.15,.91)) + 
   theme(legend.position="bottom", legend.box = "horizontal") + 
-  theme(strip.text = element_text(face="bold"))
+  theme(strip.text = element_text(face="bold")) +
 ggsave("../figures/fig7.pdf",width=6.5,height=6.5,units=c("in"))
+
+# grayscale
+ggplot(data = q.logit.data, aes(x=Age, y=Value, colour=Source)) +
+  geom_line(data = q.logit.pred, aes(x=Age, y=Value, colour=Source), size=1) + 
+  scale_x_continuous(breaks=c(0,1,seq(5,80,5))
+                     ,labels=c("0,1-4","",paste(seq(5,80,5),c(seq(9,84,5)),sep="-"))
+                     ,minor_breaks = c()) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  geom_point(size=1.5) +
+  # geom_line(aes(x=Age, y=Value, colour=Source), size=0.5) +
+	labs(y = expression(''[bolditalic(n)]*bolditalic('q')[bolditalic(x)]*bold(' (logit scale)'))
+	     , x = expression(bold("Age (years)"))) +
+  facet_wrap(~interaction(Sex,Country,sep=", "),ncol=2) +
+  # facet_wrap(~Sex + Country,ncol=2) +
+	theme(legend.title=element_blank(),legend.position=c(.15,.91)) + 
+  theme(legend.position="bottom", legend.box = "horizontal") + 
+  theme(strip.text = element_text(face="bold")) +
+  scale_colour_grey(start = 0, end = .8) + 
+ggsave("../figures/fig7-BW.pdf",width=6.5,height=6.5,units=c("in"))
+
 ```
 
 # Make Compressed Models Object for Package

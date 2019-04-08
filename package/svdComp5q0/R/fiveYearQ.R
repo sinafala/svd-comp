@@ -6,8 +6,9 @@
 #' @param q1 Decimal: the input values for 1qx; either a single vector or a matrix, age x life table.
 #' @return Data frame: equivalent values for 5qx.
 #' @examples
-#' q1 <- svdComp5q0("female",0.08,out5=FALSE)
+#' q1 <- predictLT("female",0.08,out5=FALSE)
 #' q1to5(q1)
+#' @export
 q1to5 <- function(q1) {
 
   if (missing(q1))

@@ -16,7 +16,7 @@ Data frame: equivalent values for 5qx.
 \code{q1to5} converts 1-year life table probabilities of dying 1qx to standard 5-year age groups: 0, 1-4, 5-9, etc.
 }
 \examples{
-q1 <- svdComp5q0("female",0.08,out5=FALSE)
+q1 <- predictLT("female",0.08,out5=FALSE)
 q1to5(q1)
 }
 \author{

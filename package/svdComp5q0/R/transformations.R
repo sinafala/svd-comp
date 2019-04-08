@@ -4,6 +4,7 @@
 #' @return The logit of \code{x}.
 #' @examples
 #' logit(0.5)
+#' @export
 logit <- function(x) {
   return(log(x/(1-x)))
 }
@@ -14,6 +15,7 @@ logit <- function(x) {
 #' @return The expit of \code{x}.
 #' @examples
 #' expit(-5)
+#' @export
 expit <- function(x) {
   return(exp(x)/(1+exp(x)) )
 }
