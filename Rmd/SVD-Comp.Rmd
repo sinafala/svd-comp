@@ -666,7 +666,7 @@ save(file="../RData/l5.m.RData",compress=TRUE,list=c("l5.m"))
 e5.f <- extract.lt.col(hmd.5x1.list,"female","ex")
 save(file="../RData/e5.f.RData",compress=TRUE,list=c("e5.f"))
 e5.m <- extract.lt.col(hmd.5x1.list,"male","ex")
-save(file="../RData/e5.f.RData",compress=TRUE,list=c("e5.m"))
+save(file="../RData/e5.m.RData",compress=TRUE,list=c("e5.m"))
 
 # rm(list=c("hmd.1x1.list","hmd.5x1.list"))
 ```
@@ -3054,7 +3054,7 @@ rm(list=c("lt.p.df","lt.p","lt.m","lt.f","cml.input"))
 
 # Make Tables
 
-Load the Stargazer and xtable packages for making nice LaTeX tables from regression output. The code uses **sink()** to redirect output to text files where either complete LaTeX tables are stored, or the rows of LaTeX tables are stored. The rows-only tables slot nicely into headers and footers that are nicely formatted in the manuscript, and the whole tables (Stargazer output) are completely ready to go and slot straight into the LaTeX. Running the R Markdown file to render a PDF *does not write the text files*. To do that you need to run this section intertively.
+Load the Stargazer and xtable packages for making nice LaTeX tables from regression output. The code uses **capture.output()** to redirect output to text files where either complete LaTeX tables are stored, or the rows of LaTeX tables are stored. The rows-only tables slot nicely into headers and footers that are nicely formatted in the manuscript, and the whole tables (Stargazer output) are completely ready to go and slot straight into the LaTeX. 
 
 Create table describing which HMD life tables are included in the analysis.
 
@@ -3156,8 +3156,8 @@ for (i in 1:length(ltList)) {
 #   consecutive life tables 
 ltGrandTot <- 0
 life.tables <- data.frame(
-  "abbreviation" = character(length(ltList))
-  ,"country" = character(length(ltList))
+  "country" = character(length(ltList))
+  ,"abbreviation" = character(length(ltList))
   ,"startYear" = numeric(length(ltList))
   ,"stopYear" = numeric(length(ltList))
   ,"tables" = numeric(length(ltList))
@@ -3168,8 +3168,8 @@ for (i in 1:length(ltList)) {
     if(ltList[[i]][1] == str_to_upper(country.names[[j]][1])) {
       ltTot <- as.numeric(ltList[[i]][3])-as.numeric(ltList[[i]][2])+1
       ltGrandTot <- ltGrandTot + ltTot
-      life.tables$abbreviation[i] <- as.character(country.names[[j]][2])
-      life.tables$country[i] <- as.character(country.names[[j]][1])
+      life.tables$abbreviation[i] <- as.character(country.names[[j]][1])
+      life.tables$country[i] <- as.character(country.names[[j]][2])
       life.tables$startYear[i] <- as.numeric(ltList[[i]][2])
       life.tables$stopYear[i] <- as.numeric(ltList[[i]][3])
       life.tables$tables[i] <- as.numeric(ltTot)

@@ -1,6 +1,6 @@
 
 % Table created by stargazer v.5.2 by Marek Hlavac, Harvard University. E-mail: hlavac at fas.harvard.edu
-% Date and time: Mon, Apr 08, 2019 - 14:07:27
+% Date and time: Tue, Apr 09, 2019 - 21:26:43
 \begin{table}[!htbp] \centering 
   \caption{Female RSV Models: $v_{\ell i} = f_{i}(\qf_{\, \ell},\qff_{\, \ell})$} 
   \label{tab:appA:femaleRSVMods} 

@@ -66,7 +66,8 @@ mxhat.logquad <- function(coefs, sex, Q5, k=rep(0,length(Q5))) {
 		# Force 4q1 (and thus 4m1) to be consistent with 1q0 and 5q0
 		a1 <- coale.demeny.a0 (mx[1], sex)
 		a4 <- coale.demeny.4a1(mx[1], sex)
-		Q1 <- mx[1] / ( 1 + (1-a4)*mx[1] )
+###		Q1 <- mx[1] / ( 1 + (1-a4)*mx[1] ) ### original 
+		Q1 <- mx[1] / ( 1 + (1-a1)*mx[1] )
 		Q4 <- 1 - (1-Q5)/(1-Q1)
 		mx[2] <- Q4 / ( 4 - (4-a4)*Q4 ) }
 	else {
