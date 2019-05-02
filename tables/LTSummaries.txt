@@ -1,5 +1,5 @@
-% latex table generated in R 3.5.2 by xtable 1.8-3 package
-% Tue Apr  9 21:26:43 2019
+% latex table generated in R 3.5.3 by xtable 1.8-3 package
+% Thu May  2 10:56:04 2019
  Australia & AUS & 1921--2014 & 94 \\ 
   Austria & AUT & 1947--2017 & 71 \\ 
   Belgium & BEL & 1841--1913 & 73 \\ 

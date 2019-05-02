@@ -53,8 +53,12 @@ This R Markdown document was created in RStudio using the Knit Directory = *Docu
 
 This R Markdown document was prepared using
 
-* R version 3.5.1 (2018-07-02) -- "Feather Spray" 
-* RStudio version 1.1.456
+R version:
+```{R} 
+R.Version()$version.string
+```
+
+* RStudio version 1.2.1335
 * Additional R packages from CRAN
 
     * knitr
@@ -2107,7 +2111,7 @@ ggsave("../figures/fig3-BW.pdf",width=6.5,height=6.5,units=c("in"))
 rm(list=c("e.sum","e","efn","emn","em","elm","ecm","ef","elf","ecf"))
 ```
 
-Plot the example mortality schedules with data and predictions from SVD-Comp. Use France 1978 as a low mortality example and Sweden 1751 as a high mortality example.
+Plot the example mortality schedules with data and predictions from SVD-Comp. Use Austria 1990 as a low mortality example and Sweden 1751 as a high mortality example.
 
 ```{r plot-example-data, eval = TRUE, echo = TRUE}
 # calculate the total absolute error per life table
@@ -3197,7 +3201,12 @@ capture.output(file="../tables/LTtotBoth.txt"
                ,cat(format(2*ltGrandTot, nsmall=0, big.mark=",")))
 
 # save the download date
-capture.output(file="../tables/HMDdate.txt",cat(download.date))
+if (download.date == "Local cached HMD") {
+  data.date <- "November 2, 2018"
+} else {
+  data.date <- download.date
+}
+capture.output(file="../tables/HMDdate.txt",cat(data.date))
 
 print("")
 print(paste("Total number of life tables in raw data (q1.f):"
