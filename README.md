@@ -4,7 +4,7 @@ Published article: [*A General Age-Specific Mortality Model With an Example Inde
 
 Preprint: [*A General Age-Specific Mortality Model with An Example Indexed by Child or Child/Adult Mortality*](https://arxiv.org/abs/1612.01408).
    
-Also see [*A Singular Value Decomposition-based Factorization and Parsimonious Component Model of Demographic Quantities Correlated by Age: Predicting Complete Demographic Age Schedules with Few Parameters*](https://arxiv.org/abs/1504.02057).
+Also see: [*A Singular Value Decomposition-based Factorization and Parsimonious Component Model of Demographic Quantities Correlated by Age: Predicting Complete Demographic Age Schedules with Few Parameters*](https://arxiv.org/abs/1504.02057).
 
 ## Overview
 This GitHub repository contains code for the model and the LaTeX source files for the manuscript that describes the model, published in the journal [*Demography*](https://link.springer.com/journal/13524) (currently *in press*).   
