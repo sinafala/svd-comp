@@ -1,5 +1,7 @@
 # **SVD-Component Mortality Model using Child or Child/Adult Mortality as Inputs** 
 
+Published article: [*A General Age-Specific Mortality Model With an Example Indexed by Child Mortality or Both Child and Adult Mortality*](https://doi.org/10.1007/s13524-019-00785-3)
+
 Preprint: [*A General Age-Specific Mortality Model with An Example Indexed by Child or Child/Adult Mortality*](https://arxiv.org/abs/1612.01408).
    
 Also see [*A Singular Value Decomposition-based Factorization and Parsimonious Component Model of Demographic Quantities Correlated by Age: Predicting Complete Demographic Age Schedules with Few Parameters*](https://arxiv.org/abs/1504.02057).
