@@ -7,7 +7,7 @@
 #' @param sex Character: 'female' or 'male'.
 #' @param cm Decimal: the input value(s) for 5q0; either a single value or a vector of values.
 #' @param smooth Boolean: use either smooth or raw SVD-derived components. Default is TRUE.
-#' @param logit Boolean: output either logit scale or natural scale 1qx values. Default is FALSE.
+#' @param outlogit Boolean: output either logit scale or natural scale 1qx values. Default is FALSE.
 #' @param out5 Boolean: if returning natural scale values and out5=TRUE, then return in five-year age groups, 5qx. Default is TRUE.
 #' @param am Optional decimal: input value(s) for 45q15; either single value or vector of values.  If a vector, must have the same number of elements as cm.
 #' @return Data frame: predicted 1qx values for ages 0:109. Age 110 assumed to be 1.0 and not returned. Columns labeled with input child mortality values.
@@ -19,7 +19,7 @@
 #' \dontrun{predictLT("male",c(0.03,0.01),am=0.3)}
 #' @importFrom stats predict
 #' @export
-predictLT <- function(sex,cm,smooth=TRUE,logit=FALSE,out5=TRUE,am=NULL) {
+predictLT <- function(sex,cm,smooth=TRUE,outlogit=FALSE,out5=TRUE,am=NULL) {
 
   # sex: "female" or "male"
   # cm is a vector of 5q0 values
@@ -107,7 +107,14 @@ predictLT <- function(sex,cm,smooth=TRUE,logit=FALSE,out5=TRUE,am=NULL) {
   rownames(r.p) <- mods[[sex]]$rownames
 
   # returns the matrix of predicted qx values
-  if (logit) {
+  if (outlogit) {
+    if (out5) {
+      q5 <- q1to5(expit(r.p))
+      logit.q5 <- data.frame(logit(q5)[1:23,])
+      rownames(logit.q5) <- rownames(q5)[1:23]
+      colnames(logit.q5) <- colnames(r.p)
+      return(logit.q5)
+    }
     return(r.p)
   } else {
     if (out5) {

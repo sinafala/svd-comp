@@ -4,7 +4,7 @@
 \alias{predictLT}
 \title{Predict a Life Table from Child or Child/Adult Mortality.}
 \usage{
-predictLT(sex, cm, smooth = TRUE, logit = FALSE, out5 = TRUE,
+predictLT(sex, cm, smooth = TRUE, outlogit = FALSE, out5 = TRUE,
   am = NULL)
 }
 \arguments{
@@ -14,7 +14,7 @@ predictLT(sex, cm, smooth = TRUE, logit = FALSE, out5 = TRUE,
 
 \item{smooth}{Boolean: use either smooth or raw SVD-derived components. Default is TRUE.}
 
-\item{logit}{Boolean: output either logit scale or natural scale 1qx values. Default is FALSE.}
+\item{outlogit}{Boolean: output either logit scale or natural scale 1qx values. Default is FALSE.}
 
 \item{out5}{Boolean: if returning natural scale values and out5=TRUE, then return in five-year age groups, 5qx. Default is TRUE.}
 
