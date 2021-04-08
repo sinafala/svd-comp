@@ -7,7 +7,7 @@ Preprint: [*A General Age-Specific Mortality Model with An Example Indexed by Ch
 Also see: [*A Singular Value Decomposition-based Factorization and Parsimonious Component Model of Demographic Quantities Correlated by Age: Predicting Complete Demographic Age Schedules with Few Parameters*](https://arxiv.org/abs/1504.02057).
 
 ## Overview
-This GitHub repository contains code for the model and the LaTeX source files for the manuscript that describes the model, published in the journal [*Demography*](https://link.springer.com/journal/13524) (currently *in press*).   
+This GitHub repository contains code for the model and the LaTeX source files for the manuscript that describes the model, published in the journal [*Demography*](https://doi.org/10.1007/s13524-019-00785-3) 
 
 All of the code used to create the model is contained in the R Markdown file *Rmd/SVD-Comp.Rmd*.  The code saves R Data objects containing the data, various intermediate results, and outputs in *RData*.  It also saves tables and figures for the manuscript in *tables* and *figures*.  It is compiled and rendered into the PDF *Rmd/SVD-Comp.pdf* that contains all the results.  **NB**: You will need to obtain and insert your own username and password for the [Human Mortality Database](https://www.mortality.org). Edit lines containing <hmd.user="..."> and <hmd.pass="...">, near line number 516.
 
