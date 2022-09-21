@@ -1,4 +1,0 @@
-SVD-Comp, C=1 - Log-Quad &  5,195 & 3,842 \\
- SVD-Comp, C=2 - Log-Quad &  161 & -25 \\
- SVD-Comp, C=3 - Log-Quad &  99 & -60 \\
- SVD-Comp, C=4 - Log-Quad &  -59 & -162 \\
