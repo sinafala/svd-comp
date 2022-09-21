@@ -1,0 +1,5 @@
+% latex table generated in R 4.0.3 by xtable 1.8-4 package
+% Thu Feb 18 11:22:00 2021
+ Female & 11,640.20 & 6,514.08 & 5,126.12 \\ 
+  Male & 12,946.15 & 9,235.42 & 3,710.73 \\ 
+  

@@ -1,0 +1,58 @@
+% latex table generated in R 4.0.3 by xtable 1.8-4 package
+% Thu Feb 18 11:21:49 2021
+ Australia & AUS & 1921--2018 & 98 \\ 
+  Austria & AUT & 1947--2017 & 71 \\ 
+  Belgium & BEL & 1841--1913 & 73 \\ 
+  Belgium & BEL & 1919--2018 & 100 \\ 
+  Bulgaria & BGR & 1947--2017 & 71 \\ 
+  Belarus & BLR & 1959--2018 & 60 \\ 
+  Canada & CAN & 1921--2018 & 98 \\ 
+  Switzerland & CHE & 1876--2018 & 143 \\ 
+  Chile & CHL & 1992--2017 & 26 \\ 
+  Czechia & CZE & 1950--2018 & 69 \\ 
+  East Germany & DEUTE & 1956--2017 & 62 \\ 
+  Germany & DEUTNP & 1990--2017 & 28 \\ 
+  West Germany & DEUTW & 1956--2017 & 62 \\ 
+  Denmark & DNK & 1835--2019 & 185 \\ 
+  Spain & ESP & 1908--2018 & 111 \\ 
+  Estonia & EST & 1959--2019 & 61 \\ 
+  Finland & FIN & 1878--2019 & 142 \\ 
+  France -- Civilian Population & FRACNP & 1816--2018 & 203 \\ 
+  France -- Total Population & FRATNP & 1816--2018 & 203 \\ 
+  England and Wales -- Civilian National Population & GBRCENW & 1841--2018 & 178 \\ 
+  England and Wales -- Total Population & GBRTENW & 1841--2018 & 178 \\ 
+  Northern Ireland & GBR\_NIR & 1922--2018 & 97 \\ 
+  United Kingdom & GBR\_NP & 1922--2018 & 97 \\ 
+  Scotland & GBR\_SCO & 1855--2018 & 164 \\ 
+  Greece & GRC & 1981--2017 & 37 \\ 
+  Hong Kong & HKG & 1986--2017 & 32 \\ 
+  Croatia & HRV & 2001--2018 & 18 \\ 
+  Hungary & HUN & 1950--2017 & 68 \\ 
+  Ireland & IRL & 1950--2017 & 68 \\ 
+  Iceland & ISL & 1838--1851 & 14 \\ 
+  Iceland & ISL & 1853--2018 & 166 \\ 
+  Israel & ISR & 1983--2016 & 34 \\ 
+  Italy  & ITA & 1872--2017 & 146 \\ 
+  Japan & JPN & 1947--2019 & 73 \\ 
+  Republic of Korea & KOR & 2003--2018 & 16 \\ 
+  Lithuania & LTU & 1959--2019 & 61 \\ 
+  Luxembourg & LUX & 1960--2019 & 60 \\ 
+  Latvia & LVA & 1959--2017 & 59 \\ 
+  Netherlands & NLD & 1850--2018 & 169 \\ 
+  Norway & NOR & 1846--2018 & 173 \\ 
+  New Zealand -- Maori & NZL\_MA & 1948--1948 & 1 \\ 
+  New Zealand -- Maori & NZL\_MA & 1950--1955 & 6 \\ 
+  New Zealand -- Maori & NZL\_MA & 1957--1958 & 2 \\ 
+  New Zealand -- Maori & NZL\_MA & 1960--2008 & 49 \\ 
+  New Zealand -- Non-Maori & NZL\_NM & 1901--2008 & 108 \\ 
+  New Zealand & NZL\_NP & 1948--2013 & 66 \\ 
+  Poland & POL & 1958--2018 & 61 \\ 
+  Portugal & PRT & 1940--2018 & 79 \\ 
+  Russia & RUS & 1959--2014 & 56 \\ 
+  Slovakia  & SVK & 1950--2017 & 68 \\ 
+  Slovenia & SVN & 1983--2017 & 35 \\ 
+  Sweden & SWE & 1751--2019 & 269 \\ 
+  Taiwan & TWN & 1970--2019 & 50 \\ 
+  Ukraine & UKR & 1959--2013 & 55 \\ 
+  The United States of America & USA & 1933--2018 & 86 \\ 
+  

@@ -1,0 +1,26 @@
+
+% Table created by stargazer v.5.2 by Marek Hlavac, Harvard University. E-mail: hlavac at fas.harvard.edu
+% Date and time: Tue, Sep 20, 2022 - 18:41:55
+\begin{table}[!htbp] \centering 
+  \caption{Adult Mortality Models: $\logit(\qff)_{z \ell} = f(\qf_{\, z \ell})$} 
+  \label{tab:appA:adultMxMod} 
+\begin{tabular}{@{\hspace{5pt}}l@{\hspace{5pt}}cc} 
+\toprule 
+ & \multicolumn{2}{c}{$\logit(\qff)$} \\ 
+\cmidrule(rr){2-3} 
+ & Female & Male \\ 
+\midrule  
+\\[-2.1ex] $\qf$ & $-$4.248$^{***}$ (1.367) & 4.361$^{*}$ (2.361) \\ 
+  $\mbox{logit}(\qf)$ & 2.044$^{***}$ (0.398) & $-$0.075 (0.703) \\ 
+  $\mbox{logit}(\qf)^2$ & 0.298$^{***}$ (0.079) & 0.020 (0.143) \\ 
+  $\mbox{logit}(\qf)^3$ & 0.019$^{***}$ (0.005) & 0.011 (0.010) \\ 
+  Constant & 2.576$^{***}$ (0.690) & $-$1.455 (1.203) \\ 
+ \midrule  
+Observations & 4,857 & 4,857 \\ 
+R$^{2}$ & 0.936 & 0.807 \\ 
+Adjusted R$^{2}$ & 0.936 & 0.807 \\ 
+F Statistic (df = 4; 4852) & 17,709.010$^{***}$ & 5,074.407$^{***}$ \\ 
+\bottomrule 
+\textit{Note:}  & \multicolumn{2}{r}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\ 
+\end{tabular} 
+\end{table} 
