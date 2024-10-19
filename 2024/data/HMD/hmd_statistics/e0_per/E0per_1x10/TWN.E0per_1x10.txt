@@ -1,0 +1,9 @@
+Taiwan, Life expectancy at birth (period, 1x10)	Last modified: 18 Sep 2023;  Methods Protocol: v6 (2017)
+
+  Year       Female    Male     Total
+1970-1979     73.08    68.19    70.39
+1980-1989     75.55    70.57    72.81
+1990-1999     77.79    72.20    74.74
+2000-2009     80.62    74.56    77.38
+2010-2019     82.97    76.68    79.71
+2020-2021     84.06    77.82    80.88

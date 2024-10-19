@@ -1,0 +1,7 @@
+Hong Kong, Life expectancy at birth (period, 1x10)	Last modified: 27 Sep 2022;  Methods Protocol: v6 (2017)
+
+  Year       Female    Male     Total
+1986-1989     79.89    74.14    77.02
+1990-1999     81.95    76.14    79.01
+2000-2009     84.64    78.76    81.66
+2010-2019     87.03    81.20    84.11

@@ -1,0 +1,6 @@
+Chile, Life expectancy at birth (period, 1x10)	Last modified: 18 Apr 2022;  Methods Protocol: v6 (2017)
+
+  Year       Female    Male     Total
+1992-1999     78.46    72.09    75.29
+2000-2009     80.62    74.52    77.61
+2010-2019     81.93    76.53    79.28

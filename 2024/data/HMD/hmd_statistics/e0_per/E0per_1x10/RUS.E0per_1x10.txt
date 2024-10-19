@@ -1,0 +1,9 @@
+Russia, Life expectancy at birth (period, 1x10)	Last modified: 26 Sep 2017;  Methods Protocol: v6 (2017)
+
+  Year       Female    Male     Total
+1960-1969     73.01    63.88    69.10
+1970-1979     73.39    62.53    68.43
+1980-1989     73.67    63.02    68.63
+1990-1999     72.73    60.37    66.41
+2000-2009     72.92    59.90    66.16
+2010-2014     75.80    64.37    70.10

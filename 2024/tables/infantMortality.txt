@@ -1,0 +1,24 @@
+
+% Table created by stargazer v.5.2 by Marek Hlavac, Harvard University. E-mail: hlavac at fas.harvard.edu
+% Date and time: Fri, Oct 18, 2024 - 15:04:38
+\begin{table}[!htbp] \centering 
+  \caption{Infant Mortality Models: $\logit(\qoz)_{z \ell} = f(\qf_{\, z \ell})$} 
+  \label{tab:appA:infantMxMod} 
+\begin{tabular}{@{\hspace{5pt}}l@{\hspace{5pt}}cc} 
+\toprule 
+ & \multicolumn{2}{c}{$\logit(\qoz)$} \\ 
+\cmidrule(rr){2-3} 
+ & Female & Male \\ 
+\midrule  
+\\[-2.1ex] $\mbox{logit}(\qf)$ & 0.671$^{***}$ (0.004) & 0.700$^{***}$ (0.004) \\ 
+  $\mbox{logit}(\qf)^2$ & $-$0.036$^{***}$ (0.001) & $-$0.035$^{***}$ (0.001) \\ 
+  Constant & $-$0.939$^{***}$ (0.006) & $-$0.818$^{***}$ (0.005) \\ 
+ \midrule  
+Observations & 4,902 & 4,902 \\ 
+R$^{2}$ & 0.996 & 0.996 \\ 
+Adjusted R$^{2}$ & 0.996 & 0.996 \\ 
+F Statistic (df = 2; 4899) & 582,981.600$^{***}$ & 660,155.800$^{***}$ \\ 
+\bottomrule 
+\textit{Note:}  & \multicolumn{2}{r}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\ 
+\end{tabular} 
+\end{table} 

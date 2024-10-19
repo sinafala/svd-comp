@@ -1,0 +1,7 @@
+Israel, Total Population, Life expectancy at birth (period, 1x10)	Last modified: 31 Oct 2018;  Methods Protocol: v6 (2017)
+
+  Year       Female    Male     Total
+1983-1989     77.40    73.74    75.58
+1990-1999     79.64    75.73    77.73
+2000-2009     82.08    78.07    80.14
+2010-2016     83.83    80.13    82.04

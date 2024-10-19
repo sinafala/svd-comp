@@ -1,5 +1,0 @@
-% latex table generated in R 4.2.1 by xtable 1.8-4 package
-% Tue Sep 20 18:42:00 2022
- Female & 6,515.92 & 6,695.96 & -180.04 \\ 
-  Male & 9,092.47 & 9,551.02 & -458.55 \\ 
-  

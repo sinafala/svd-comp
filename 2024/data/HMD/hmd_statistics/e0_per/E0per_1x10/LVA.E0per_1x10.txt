@@ -1,0 +1,9 @@
+Latvia, Life expectancy at birth (period, 1x10)	Last modified: 11 Mar 2021;  Methods Protocol: v6 (2017)
+
+  Year       Female    Male     Total
+1960-1969     74.17    66.30    70.62
+1970-1979     74.35    64.64    69.75
+1980-1989     74.66    64.83    69.96
+1990-1999     73.99    62.22    68.09
+2000-2009     76.24    65.32    70.85
+2010-2019     79.08    69.37    74.40
