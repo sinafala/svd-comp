@@ -1,9 +1,0 @@
-Ukraine, Life expectancy at birth (period, 1x10)	Last modified: 26 Sep 2017;  Methods Protocol: v6 (2017)
-
-  Year       Female    Male     Total
-1960-1969     74.40    67.49    71.42
-1970-1979     74.39    65.84    70.55
-1980-1989     74.51    65.50    70.31
-1990-1999     73.53    62.97    68.27
-2000-2009     73.75    62.26    67.91
-2010-2013     75.80    65.87    70.92
