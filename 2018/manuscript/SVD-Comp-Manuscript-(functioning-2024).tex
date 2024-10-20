@@ -142,7 +142,7 @@
 
 % reference the appendices in separate file
 \usepackage{xr}
-\externaldocument{"SVD-Comp-Appendices"}
+\externaldocument{"SVD-Comp-Appendices-(functioning-2024)"}
 
 % define variable for number of life tables per sex
 \DeclareRobustCommand{\LTtot}{\input{../tables/LTtot.txt}}
@@ -153,6 +153,16 @@
 % define variable for date when HMD downloaded
 \DeclareRobustCommand{\HMDdate}{ \begingroup\endlinechar=-1 \input{../tables/HMDdate.txt}\endgroup}
 
+% fix \input so that it is 'expandable' and can be used in tabular environments 
+\ExplSyntaxOn % providing \expandableinput
+\cs_new:Npn \expandableinput #1
+  { \use:c { @@input } { \file_full_name:n {#1} } }
+\ExplSyntaxOff
+
+%\makeatletter % setting your search path
+%\providecommand*{\input@path}{}
+%\g@addto@macro\input@path{{"C:/Users/me/inpath/"}}% \input finds files in this directory
+%\makeatother
 
 
 
@@ -385,7 +395,7 @@ The Human Mortality Database (HMD) \citep{hmd2016} contains rigorously cleaned, 
 \toprule
 Country/Population  & Abbreviation & Years Covered & Total Life Tables \\
 \midrule
-\input{../tables/LTSummaries.txt}
+\expandableinput{../tables/LTSummaries.txt}
 \bottomrule
 \end{tabular}
 \normalsize
@@ -483,7 +493,7 @@ This is a fully general approach to predicting mortality or any other \added{dem
 
 
 %%% === %%% === %%%
-\subsection{Calibrating SVD-Comp to the Relationship between $\qf$ and Mortality at Other Ages in the HMD \label{sec:calibrate}}
+\subsection{Calibrating SVD-Comp to the Relationship between $\qf$ and Mortality at Other Ages in the HMD} \label{sec:calibrate}
 
 All computation is carried out using the \textsf{R} statistical programming environment \citep{RCore, R-url}.
 
@@ -492,7 +502,7 @@ All computation is carried out using the \textsf{R} statistical programming envi
 The life tables of the HMD are arranged into two $A \times L$ matrices $\mbf{Q}_z$ of single-year, age-specific life table probabilities of dying $\qox$, one for each sex. $A$ = number of age groups = 110, $L$ = number of life tables = 4,610, and $z \in \{ \mbox{female}, \, \mbox{male} \}$.  The SVD\footnote{SVDs calculated using the \textsf{svd} function in the \textsf{base} package of \textsf{R}.} of each $\mbf{Q}_z$ yields $\rho$ LSVs $\mbf{u}_{zi}$, RSVs $\mbf{v}_{zi}$, and SVs $\mbf{s}_z$. To ensure that all age groups have approximately the same influence when calculating the SVDs, each mortality schedule is offset from the origin\footnote{This ensures that the whole data cloud is separated from the origin by an amount that is substantially greater than the typical value of each logit-transformed mortality rate, and therefore each age group has roughly equivalent leverage in the optimization required to identify the first new dimension of the SVD.  The remaining dimensions are effectively identified on a centered data cloud.} by -10, and the offset is added back to predicted mortality schedules.  Four of the new dimensions identified by each SVD are retained, i.e. $c=4$ in Equation \ref{eq:colReconU5mr}.  For females those account for \lineinput{../tables/ssFullFemale.txt} of the total sum of squares, respectively, or together \lineinput{../tables/ssFullFemaleTotal.txt}.  For males, \lineinput{../tables/ssFullMale.txt}  and together \lineinput{../tables/ssFullMaleTotal.txt}.  Appendix \ref{app:variances} (on-line appendices) contains additional information on the total sum of squares explained by each component of the SVD.
 
 %%% === %%% === %%%
-\subsubsection{Models for Predicting Weights. \label{sec:modsPredWeights}} 
+\subsubsection{Models for Predicting Weights} \label{sec:modsPredWeights}
 
 Based on Equations \ref{eq:lsvC} and \ref{eq:lsvCA}, regression models are defined that relate the RSVs $\mbf{v}_{zi}$ to $\qf_{\, z}$ and $\qff_{\, z}$.  Scatterplots of the elements of the RSVs versus $\logit(\qf)$ in Figures \ref{fig:rsvF} and \ref{fig:rsvM} in Appendix \ref{app:figs} (on-line appendices) make it clear that the relationships are not linear or simple.  With no theory to guide the choice of predictors, I tried all combinations of simple transformations of $\logit(\qf)$ and $\logit(\qff)$ and their interactions.  The resulting models explain almost all the variance in the elements of $\mbf{v}_1$ ($\mbox{R}^2 \approx 97\%$ for both sexes), the vast majority of the variance in the elements of $\mbf{v}_2$ ($\mbox{R}^2 \approx 86\%$ for both sexes), and about one third of the variance in the elements of $\mbf{v}_3$ an d $\mbf{v}_4$.  Additionally, I tried to avoid overfitting or creating odd boundary effects in the predicted values that would have made out-of-sample predictions immediately implausible.  These models behave sensibly up to the edges of the sample. The final models are %
 %
@@ -505,7 +515,7 @@ v_{z \ell i} = c_{zi} &+  \beta_{z1i} \cdot \qf_{\, z\ell} + \beta_{z2i} \cdot \
 where $i \in \{1:4\}$ indexes the SVD dimensions and $\ell$ indexes mortality schedules and elements of $\mbf{v}_{zi}$.  OLS regression is used to estimate coefficients for the eight regression models defined in Equation \ref{eqn:vsByMx}, and the estimated values are contained in Appendix \ref{app:regs} (on-line appendices) Tables \ref{tab:appA:femaleRSVMods} and \ref{tab:appA:maleRSVMods}.  Using \replaced{new}{arbitrary} values for both $\qf$ and $\qff$ as inputs, these models are used to predict values for the weights in Equation \ref{eq:colReconU5mr}\added[id=r4]{ -- i.e. for prediction replace $v_{z \ell i}$ on the left hand side with $\widehat{w}_{z i}$}.  
 
 %%% === %%% === %%%
-\subsubsection{Models for Adult Mortality. \label{sec:modsAdultMx}} 
+\subsubsection{Models for Adult Mortality} \label{sec:modsAdultMx}
 
 To accommodate a one-parameter model that uses only $\qf$ as an input, a regression model is defined that relates adult mortality $\logit(\qff)_{z}$ to child mortality $\qf_{\, z}$.  The scatterplot of $\logit(\qff)$ versus $\logit(\qf)$ in Figure \ref{fig:adultChild} in Appendix \ref{app:figs} (on-line appendices) reveals a slightly complicated relationship that is neither linear nor systematically curvilinear.  Again without theory as a guide, I tried a variety of models including various simple transformations of $\qf$.  The resulting models explain \replaced[id=r1]{most of}{almost all} the variance in $\logit(\qff)$ ($\mbox{R}^2 = 93\%$ for females and $79\%$ for males).  The final models are%
 %
@@ -517,7 +527,7 @@ To accommodate a one-parameter model that uses only $\qf$ as an input, a regress
 OLS regression is used to estimate coefficients for the two regression models defined by Equation \ref{eqn:amCm}, and the estimated coefficients are contained in Appendix \ref{app:regs} (on-line appendices) Table \ref{tab:appA:adultMxMod}.  This model is used to predict values for $\qff$ when only $\qf$ is supplied as an input.  Then both the input value for $\qf$ and the predicted value for $\qff$ are used in Equation \ref{eqn:vsByMx} to predict the weights in Equation \ref{eq:colReconU5mr}.   
 
 %%% === %%% === %%%
-\subsubsection{Models for Mortality in the First Year of Life. \label{sec:modsInfMx}} 
+\subsubsection{Models for Mortality in the First Year of Life} \label{sec:modsInfMx}
 
 Figure \ref{fig:q0Child} displays the relationship between $\logit(\qoz)$ and $\logit(\qf)$.  Mortality falls very rapidly in the first few years of life.  Using the child mortality rate $\qf$, a five-year summary of mortality between ages 0 and 5, as a predictor of single-year mortality within that same five-year age group is relatively uninformative.  Using the SVD procedure, experimentation reveals that $\qf$ predicts $\qoo$ through $\qof$ well and $\qoz$ slightly less well.  The prediction of $\qoz$ can be improved by modeling the relationship between $\logit(\qoz)$ and $\logit(\qf)$ separately as 
 \begin{align}
@@ -571,7 +581,7 @@ I also summarize the overall error produced by each model across all of the mort
 
 
 %%% === %%% === %%%
-\section{Results \label{sec:results}}
+\section{Results} \label{sec:results}
 
 %%% === %%% === %%%
 \subsection{Data and Fits}
@@ -588,7 +598,7 @@ To provide a sense of the mortality data contained in the HMD and the fits produ
 \end{figure}
 
 %%% === %%% === %%%
-\subsection{Factors of the SVD \label{sec:results:SVDFacs}}
+\subsection{Factors of the SVD} \label{sec:results:SVDFacs}
 
 Figure \ref{fig:svd} \added{and Table \ref{tab:appA:comps} in Appendix \ref{app:comps} (on-line appendices)} present the sex-specific LSVs from the SVD of the full set of HMD mortality schedules scaled by their corresponding singular values, $s_{i} \mathbf{u}_{i}$ (ignoring the index for sex $z$).  All elements of $s_1\mbf{u}_1$ are negative so that $s_1\mbf{u}_1$ captures the underlying `average' shape of the mortality profile with age.  Weights applied to $s_1\mbf{u}_1$ move this underlying mortality profile up and down and hence control the overall level of mortality.  The remaining $s_i\mbf{u}_i$ all cross the x-axis and therefore represent age-specific deviations from the overall underlying pattern.  These scaled left singular vectors are the components used in the weighted sum in Equation \ref{eq:colReconU5mr}.  Figure \ref{fig:svd} also displays smoothed\footnote{For components $i \in \{2,3,4\}$, kernel smoother with Gaussian kernel and bandwidth = $i+1$ for ages $i$ and older.} versions of the scaled LSVs.  One can use the smoothed versions to make the predicted mortality schedules smoother.
 
@@ -664,11 +674,11 @@ Table \ref{tab:absErrs} displays the total absolute errors \added{on the natural
  \midrule
 \multicolumn{5}{l}{\textit{Female}} \\
  \midrule
- \input{../tables/compsFemale.txt}
+ \expandableinput{../tables/compsFemale.txt}
  \midrule
 \multicolumn{5}{l}{\textit{Male}} \\
  \midrule
- \input{../tables/compsMale.txt}
+ \expandableinput{../tables/compsMale.txt}
 \bottomrule
 \end{tabular}
 \end{center}
