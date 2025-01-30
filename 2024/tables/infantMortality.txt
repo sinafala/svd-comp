@@ -1,6 +1,6 @@
 
 % Table created by stargazer v.5.2 by Marek Hlavac, Harvard University. E-mail: hlavac at fas.harvard.edu
-% Date and time: Fri, Oct 18, 2024 - 15:04:38
+% Date and time: Tue, Oct 22, 2024 - 14:36:36
 \begin{table}[!htbp] \centering 
   \caption{Infant Mortality Models: $\logit(\qoz)_{z \ell} = f(\qf_{\, z \ell})$} 
   \label{tab:appA:infantMxMod} 

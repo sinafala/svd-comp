@@ -1,0 +1,14 @@
+knitr
+bookdown
+formatR
+readr
+stringr
+reshape2
+ggplot2
+plyr
+httr
+lubridate
+stargazer
+xtable
+usethis
+devtools

@@ -1,5 +1,5 @@
 % latex table generated in R 4.4.1 by xtable 1.8-4 package
-% Fri Oct 18 15:04:38 2024
+% Tue Oct 22 14:36:36 2024
  Australia & AUS & 1921--2021 & 101 \\ 
   Austria & AUT & 1947--2019 & 73 \\ 
   Belgium & BEL & 1841--1913 & 73 \\ 

@@ -1,5 +1,5 @@
 % latex table generated in R 4.4.1 by xtable 1.8-4 package
-% Fri Oct 18 15:04:53 2024
+% Tue Oct 22 14:36:50 2024
  Female & 6,700.12 & 6,788.56 & -88.44 \\ 
   Male & 9,307.85 & 9,709.71 & -401.86 \\ 
   

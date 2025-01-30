@@ -4212,10 +4212,10 @@ save(file="../RData/mods2024.RData",compress=TRUE,list=c("mods2024"))
 Save the workspace and clear everything
 
 ```{r wrap-up, eval=TRUE, echo=TRUE}
-# save(file=paste("../Rdata/All-SVD-Comp_"
-#                 ,format(Sys.time(),"%Y-%m-%d")
-#                 ,".RData",sep=""),compress=TRUE,list=ls())
-# rm(list=ls())
+save(file=paste("../Rdata/All-SVD-Comp_"
+                ,format(Sys.time(),"%Y-%m-%d")
+                ,".RData",sep=""),compress=TRUE,list=ls())
+rm(list=ls())
 
 # record when this stops
 write(as.numeric(format(Sys.time(), "%s")),file="../Rmd/stopped.txt")
