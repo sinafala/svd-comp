@@ -13,7 +13,13 @@ All of the code used to create the model is contained in the R Markdown file *Rm
 
 The manuscript itself is composed of two LaTeX files in *manuscript* - one for the main manuscript and one for the appendices.  They cross reference each other so you need to compile both and then recompile both to get all the references updated.
 
-Finally, there is a simple package to implement the final method - **svdComp5q0**.  This is stored in *package* as an RStudio package project. 
+Finally, the original not-on-CRAN package to implement the final method - **svdComp5q0** - is is stored in *package* as an RStudio package project. 
+
+## CRAN Package **SVDMx** 
+* The **SVDMx** package on CRAN implements the mortality model using 2018, 2022, or 2024 calibration data
+* Install using the *Packages* pane of RStudio, or
+* Install from the R command line using "install.packages("SVDMx")"
+* **SVDMx** is very compact in compressed form: 121KB!
 
 ## General Requirements: Software, etc.
 This material has been prepared on an Apple Macintosh running Mac OS High Sierra.  All software necessary is open source and free, including
@@ -23,14 +29,9 @@ This material has been prepared on an Apple Macintosh running Mac OS High Sierra
     * MacTex: [Download](http://www.tug.org/mactex/index.html)
     * TeXShop: [Download](https://pages.uoregon.edu/koch/texshop/obtaining.html)
 
-## Installing **svdComp5q0** R Package
-* Install and load the **devtools** package
-* Use devtools to install the **svdComp5q0** R package directly from GitHub using this command.    
-`install_github(repo = "sinafala/svdComp5q0")`
-
 ## To Run the Markdown File
 * If you're a regular GitHub user, clone the *svd-comp* repository
-* If you're not a regular GitHub user, go to the upper right corner of this web page and click 'Clone or Download' and in the small window that appears click 'Download Zip'.  After the .zip file has downloaded, move it somewhere conveneint and unzip it.
+* If you're not a regular GitHub user, go to the upper right corner of this web page and click 'Clone or Download' and in the small window that appears click 'Download Zip'.  After the .zip file has downloaded, move it somewhere convenient and unzip it.
 *  Use RStudio to open *Rmd/SVD-Comp.Rmd*
 
 ## Directory structure
